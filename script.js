@@ -82,6 +82,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Funzione per caricare una conversazione specifica
+    function loadConversation(conversationId) {
+        fetch(`/api/conversations?id=${conversationId}`)
+            .then(response => response.json())
+            .then(data => {
+                chatWindow.innerHTML = '';
+                data.messages.forEach(msg => {
+                    displayMessage(msg.role, msg.content);
+                });
+            })
+            .catch(error => console.error('Errore nel caricamento della conversazione:', error));
+    }
+
     // Funzione per visualizzare un messaggio
     function displayMessage(role, content) {
         const messageDiv = document.createElement('div');
