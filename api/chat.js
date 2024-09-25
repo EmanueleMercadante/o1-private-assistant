@@ -3,7 +3,7 @@ const OpenAI = require('openai');
 
 // Inizializza il client di OpenAI
 const openai = new OpenAI({
-    apiKey: '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'
+    apiKey: process.env.OPENAI_API_KEY
 });
 
 // Configurazione del client PostgreSQL
