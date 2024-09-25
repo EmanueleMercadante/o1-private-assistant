@@ -5,7 +5,7 @@
     <title>Chatbot AI</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Includi Highlight.js per la sintassi evidenziata -->
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
 </head>
 <body>
     <div class="chat-container">
@@ -15,21 +15,25 @@
         <div id="conversation-list">
             <h2>Conversazioni</h2>
             <ul id="conversations"></ul>
-            <button id="new-conversation">Nuova Conversazione</button>
+            <button id="new-conversation">+ Nuova Conversazione</button>
         </div>
         <div id="chat-section">
             <div id="chat-window"></div>
             <div class="input-area">
-                <textarea id="user-input" placeholder="Inserisci il tuo messaggio..."></textarea>
+                <textarea id="user-input" placeholder="Scrivi un messaggio..."></textarea>
                 <button id="send-button">Invia</button>
             </div>
         </div>
     </div>
 
+    <!-- Include le librerie di Highlight.js -->
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <!-- Includi i linguaggi che desideri supportare -->
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/javascript.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/python.min.js"></script>
-    <!-- Aggiungi altre lingue se necessario -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/html.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/css.min.js"></script>
+    <!-- Il tuo script principale -->
     <script src="script.js"></script>
 </body>
 </html>

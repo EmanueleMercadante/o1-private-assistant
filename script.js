@@ -48,20 +48,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('content');
 
-        // Verifica se il contenuto contiene codice
-        if (isCodeBlock(content)) {
-            const codeContent = extractCode(content);
-            const pre = document.createElement('pre');
-            const code = document.createElement('code');
-            code.textContent = codeContent.code;
-            code.classList.add(codeContent.language);
-            pre.appendChild(code);
-            contentDiv.appendChild(pre);
-            // Inizializza Highlight.js
-            hljs.highlightElement(code);
-        } else {
-            contentDiv.textContent = content;
-        }
+        // Suddividi il contenuto in parti di testo e blocchi di codice
+        const messageParts = parseMessageContent(content);
+
+        messageParts.forEach(part => {
+            if (part.type === 'code') {
+                const pre = document.createElement('pre');
+                const code = document.createElement('code');
+                code.textContent = part.code.trim();
+                code.classList.add(part.language || 'plaintext');
+                pre.appendChild(code);
+                contentDiv.appendChild(pre);
+                // Inizializza Highlight.js
+                hljs.highlightElement(code);
+            } else {
+                const textParagraph = document.createElement('p');
+                textParagraph.textContent = part.text.trim();
+                contentDiv.appendChild(textParagraph);
+            }
+        });
 
         messageDiv.appendChild(contentDiv);
         chatWindow.appendChild(messageDiv);
@@ -132,4 +137,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Carica le conversazioni all'avvio
     loadConversations();
+
+    // Funzione per visualizzare un messaggio
+    
+
+    // Funzione per suddividere il messaggio in parti di testo e codice
+    function parseMessageContent(content) {
+        const regex = /```(\w+)?\n([\s\S]*?)\n```/g;
+        const parts = [];
+        let lastIndex = 0;
+        let match;
+
+        while ((match = regex.exec(content)) !== null) {
+            // Testo prima del blocco di codice
+            if (match.index > lastIndex) {
+                parts.push({
+                    type: 'text',
+                    text: content.substring(lastIndex, match.index)
+                });
+            }
+
+            // Blocco di codice
+            parts.push({
+                type: 'code',
+                language: match[1],
+                code: match[2]
+            });
+
+            lastIndex = regex.lastIndex;
+        }
+
+        // Testo dopo l'ultimo blocco di codice
+        if (lastIndex < content.length) {
+            parts.push({
+                type: 'text',
+                text: content.substring(lastIndex)
+            });
+        }
+
+        return parts;
+    }
 });
