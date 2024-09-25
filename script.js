@@ -21,9 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Aggiungi listener per selezionare la conversazione
                     li.addEventListener('click', () => {
-                        currentConversationId = parseInt(conv.conversation_id);
-                        loadConversation(currentConversationId);
-                        updateActiveConversation(currentConversationId);
+                        currentConversationId = conv.conversation_id;
+                        loadConversation(conv.conversation_id);
+                        updateActiveConversation(conv.conversation_id);
                     });
 
                     // Creazione del pulsante di eliminazione
@@ -47,17 +47,39 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => console.error('Errore nel caricamento delle conversazioni:', error));
     }
 
-    // Funzione per caricare una conversazione specifica
-    function loadConversation(conversationId) {
-        fetch(`/api/conversations?id=${conversationId}`)
-            .then(response => response.json())
-            .then(data => {
-                chatWindow.innerHTML = '';
-                data.messages.forEach(msg => {
-                    displayMessage(msg.role, msg.content);
-                });
+    // Funzione per aggiornare l'evidenziazione della conversazione attiva
+    function updateActiveConversation(conversationId) {
+        const conversationItems = document.querySelectorAll('.conversation-item');
+        conversationItems.forEach(item => {
+            if (parseInt(item.dataset.id) === conversationId) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    // Funzione per eliminare una conversazione
+    function deleteConversation(conversationId, conversationName) {
+        const confirmDelete = confirm(`Sei sicuro di voler eliminare la conversazione "${conversationName}"?`);
+        if (confirmDelete) {
+            fetch(`/api/conversations?id=${conversationId}`, {
+                method: 'DELETE',
             })
-            .catch(error => console.error('Errore nel caricamento della conversazione:', error));
+                .then(response => {
+                    if (response.ok) {
+                        // Se la conversazione eliminata era quella attiva, resetta la chat
+                        if (currentConversationId === conversationId) {
+                            currentConversationId = null;
+                            chatWindow.innerHTML = '';
+                        }
+                        loadConversations();
+                    } else {
+                        console.error('Errore nell\'eliminazione della conversazione.');
+                    }
+                })
+                .catch(error => console.error('Errore nella comunicazione con l\'API:', error));
+        }
     }
 
     // Funzione per visualizzare un messaggio
