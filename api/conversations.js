@@ -32,6 +32,25 @@ module.exports = async (req, res) => {
         );
         const conversationId = insertRes.rows[0].conversation_id;
         res.status(201).json({ conversation_id: conversationId });
+    } else if (req.method === 'DELETE') {
+        const conversationId = req.query.id;
+        if (!conversationId) {
+            res.status(400).json({ error: 'ID conversazione mancante' });
+            return;
+        }
+
+        try {
+            // Elimina i messaggi associati alla conversazione
+            await client.query('DELETE FROM messages WHERE conversation_id = $1', [conversationId]);
+
+            // Elimina la conversazione
+            await client.query('DELETE FROM conversations WHERE conversation_id = $1', [conversationId]);
+
+            res.status(200).json({ message: 'Conversazione eliminata con successo' });
+        } catch (error) {
+            console.error('Errore nell\'eliminazione della conversazione:', error);
+            res.status(500).json({ error: 'Errore interno del server' });
+        }
     } else {
         res.status(405).json({ error: 'Metodo non consentito' });
     }

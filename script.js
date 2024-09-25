@@ -17,12 +17,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     const li = document.createElement('li');
                     li.textContent = conv.conversation_name;
                     li.dataset.id = conv.conversation_id;
+                    li.classList.add('conversation-item');
+
+                    // Aggiungi listener per selezionare la conversazione
                     li.addEventListener('click', () => {
-                        currentConversationId = conv.conversation_id;
-                        loadConversation(conv.conversation_id);
+                        currentConversationId = parseInt(conv.conversation_id);
+                        loadConversation(currentConversationId);
+                        updateActiveConversation(currentConversationId);
                     });
+
+                    // Creazione del pulsante di eliminazione
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = '✕';
+                    deleteButton.classList.add('delete-button');
+
+                    // Prevenire la propagazione del click sul pulsante di eliminazione
+                    deleteButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteConversation(conv.conversation_id, conv.conversation_name);
+                    });
+
+                    li.appendChild(deleteButton);
                     conversationsList.appendChild(li);
                 });
+
+                // Aggiorna l'evidenziazione della conversazione attiva
+                updateActiveConversation(currentConversationId);
             })
             .catch(error => console.error('Errore nel caricamento delle conversazioni:', error));
     }
@@ -177,4 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return parts;
     }
+
+
+    
 });

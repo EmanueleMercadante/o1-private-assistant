@@ -129,6 +129,10 @@ header h1 {
     margin: 0;
 }
 
+.message .content p {
+    white-space: pre-wrap;
+}
+
 .input-area {
     height: 12vh;
     display: flex;
@@ -140,7 +144,8 @@ header h1 {
 #user-input {
     height: 12vh;
     flex-grow: 1;
-    padding: 8px 12px;
+    padding: 12px;
+    padding-top: 8px;
     border: 1px solid #ccc;
     border-radius: 18px;
     font-size: 16px;
@@ -188,4 +193,31 @@ header h1 {
 
 ::-webkit-scrollbar-thumb:hover {
     background-color: #aaa;
+}
+
+.conversation-item {
+    position: relative;
+    padding-right: 25px; /* Spazio per il pulsante 'x' */
+}
+
+.conversation-item .delete-button {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #e4e6eb;
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.conversation-item .delete-button:hover {
+    opacity: 1;
+}
+
+/* Evidenziazione della conversazione selezionata */
+.conversation-item.active {
+    background-color: #3A3B3C;
 }
