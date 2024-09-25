@@ -154,10 +154,11 @@ header h1 {
 }
 
 #user-input {
-    height: 12vh;
+    height: 10vh;
     flex-grow: 1;
-    padding: 12px;
     padding-top: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
     border: 1px solid #ccc;
     border-radius: 18px;
     font-size: 16px;
