@@ -14,7 +14,7 @@ header {
     display: flex;
     position: fixed;
     justify-content: center;
-    height: 10vh;
+    height: 11vh;
     width: 100%;
     background-color: #360a81;
     color: white;
@@ -33,18 +33,10 @@ header h1 {
     color: #e4e6eb;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 20px; /* Puoi mantenere i padding desiderati */
-    margin-top: 12vh;
+    padding: 20px 20px 20px; /* Aggiustamento padding per spazio sotto l'header */
+    margin-top: 11vh;
 }
 
-#conversation-list {
-    width: 20%;
-    background-color: #242526;
-    color: #e4e6eb;
-    overflow-y: auto;
-    padding: 20px 20px 20px; /* Aggiustamento padding per spazio sotto l'header */
-    margin-top: 12vh
-}
 
 #conversation-list h2 {
     margin-top: 0;
@@ -86,7 +78,7 @@ header h1 {
     padding-left: 30px; /* Aggiustamento padding per spazio sotto l'header */
     padding-right: 30px; /* Aggiustamento padding per spazio sotto l'header */
     border-radius: 10px;
-    margin-top: 12vh;
+    margin-top: 11vh;
     position: relative;
 }
 
