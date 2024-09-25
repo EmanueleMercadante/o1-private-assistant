@@ -14,9 +14,9 @@ header {
     display: flex;
     position: fixed;
     justify-content: center;
-    height: 12vh;
+    height: 10vh;
     width: 100%;
-    background-color: #4267B2;
+    background-color: #360a81;
     color: white;
     z-index: 1;
 }
@@ -24,6 +24,17 @@ header {
 header h1 {
     margin-top: auto;
     margin-bottom: auto;
+}
+
+#conversation-list {
+    box-sizing: border-box;
+    width: 20%;
+    background-color: #242526;
+    color: #e4e6eb;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px; /* Puoi mantenere i padding desiderati */
+    margin-top: 12vh;
 }
 
 #conversation-list {
@@ -84,6 +95,7 @@ header h1 {
     padding: 20px;
     overflow-y: auto;
     background-color: #fff;
+    border-radius: 8px;
 }
 
 .message {
