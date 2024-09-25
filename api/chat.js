@@ -1,6 +1,8 @@
 const { Configuration, OpenAIApi } = require('openai');
 const { Client } = require('pg');
 
+export const maxDuration = 60; // This function can run for a maximum of 5 seconds
+
 // Inizializza la configurazione di OpenAI
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY, // Assicurati che la variabile d'ambiente sia impostata
