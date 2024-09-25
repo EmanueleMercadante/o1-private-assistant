@@ -1,14 +1,16 @@
+const { Configuration, OpenAIApi } = require('openai');
 const { Client } = require('pg');
-const OpenAI = require('openai');
 
-// Inizializza il client OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+// Inizializza la configurazione di OpenAI
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY, // Assicurati che la variabile d'ambiente sia impostata
 });
+
+const openai = new OpenAIApi(configuration);
 
 // Configurazione del client PostgreSQL
 const client = new Client({
-  connectionString: process.env.DATABASE_URL
+  connectionString: process.env.DATABASE_URL, // Assicurati che questa variabile d'ambiente sia impostata
 });
 
 client.connect();
@@ -17,28 +19,56 @@ module.exports = async (req, res) => {
   if (req.method === 'POST') {
     const { conversation_id, message } = req.body;
 
+    // Gestisci il caso in cui conversation_id non sia fornito (ad esempio, nuova conversazione)
+    let conversationId = conversation_id;
+
+    // Se conversationId non è fornito, crea una nuova conversazione
+    if (!conversationId) {
+      try {
+        const result = await client.query(
+          'INSERT INTO conversations (conversation_name) VALUES ($1) RETURNING conversation_id',
+          ['Nuova Conversazione'] // Puoi personalizzare il nome della conversazione
+        );
+        conversationId = result.rows[0].conversation_id;
+      } catch (error) {
+        console.error('Errore nella creazione della nuova conversazione:', error);
+        res.status(500).json({ error: 'Errore interno del server' });
+        return;
+      }
+    }
+
     // Recupera la cronologia dei messaggi per la conversazione corrente
-    const messages = await getMessages(conversation_id);
+    let messages = [];
+    try {
+      messages = await getMessages(conversationId);
+    } catch (error) {
+      console.error('Errore nel recupero dei messaggi:', error);
+      res.status(500).json({ error: 'Errore interno del server' });
+      return;
+    }
 
     // Aggiungi il messaggio dell'utente alla cronologia
     messages.push({ role: 'user', content: message });
 
     // Genera la risposta utilizzando l'API di OpenAI
     try {
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: messages
+      const completion = await openai.createChatCompletion({
+        model: 'gpt-3.5-turbo', // Sostituisci con il modello che preferisci
+        messages: messages,
       });
 
-      const assistantMessage = completion.choices[0].message.content;
+      const assistantMessage = completion.data.choices[0].message.content;
 
       // Salva i messaggi nel database
-      await saveMessage(conversation_id, 'user', message);
-      await saveMessage(conversation_id, 'assistant', assistantMessage);
+      await saveMessage(conversationId, 'user', message);
+      await saveMessage(conversationId, 'assistant', assistantMessage);
 
-      res.status(200).json({ conversation_id, response: assistantMessage });
+      res.status(200).json({ conversation_id: conversationId, response: assistantMessage });
     } catch (error) {
-      console.error('Errore nella chiamata all\'API di OpenAI:', error);
+      console.error(
+        'Errore nella chiamata all\'API di OpenAI:',
+        error.response ? error.response.data : error.message
+      );
       res.status(500).json({ error: 'Errore interno del server' });
     }
   } else {
@@ -54,9 +84,9 @@ async function getMessages(conversationId) {
   );
 
   // Mappa i messaggi nel formato richiesto dall'API di OpenAI
-  return res.rows.map(row => ({
+  return res.rows.map((row) => ({
     role: row.role,
-    content: row.content
+    content: row.content,
   }));
 }
 
