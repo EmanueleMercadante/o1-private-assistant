@@ -2,7 +2,7 @@ const { Client } = require('pg');
 
 // Configurazione del client PostgreSQL
 const client = new Client({
-    connectionString: process.env.DATABASE_URL || 'la_tua_stringa_di_connessione_postgresql'
+    connectionString: process.env.DATABASE_URL || 'postgres://default:8nCx5XIZurDd@ep-soft-tooth-a45f5lao-pooler.us-east-1.aws.neon.tech:5432/verceldb?sslmode=require'
 });
 
 client.connect();
