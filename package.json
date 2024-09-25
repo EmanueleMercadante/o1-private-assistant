@@ -1,0 +1,20 @@
+{
+    "name": "o1-private-assistant",
+    "version": "1.0.0",
+    "description": "Un'applicazione chatbot AI con OpenAI API, salvata in PostgreSQL e deployata su Vercel.",
+    "main": "index.js",
+    "scripts": {
+      "dev": "vercel dev",
+      "start": "vercel start"
+    },
+    "author": "Il tuo nome",
+    "license": "MIT",
+    "dependencies": {
+      "openai": "^3.2.1",
+      "pg": "^8.10.0",
+      "highlight.js": "^11.7.0"
+    },
+    "devDependencies": {
+      "nodemon": "^2.0.22"
+    }
+  }
