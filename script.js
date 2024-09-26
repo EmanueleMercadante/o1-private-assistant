@@ -95,6 +95,21 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => console.error('Errore nel caricamento della conversazione:', error));
     }
 
+
+
+
+
+
+
+
+    // Funzione per formattare il testo racchiuso tra **<testo>** in grassetto
+    function formatBoldText(text) {
+        // Usa una regex per trovare il testo tra **< e >**
+        const boldRegex = /\*\*<(.*?)>\*\*/g;
+        // Sostituisci con il testo in grassetto
+        return text.replace(boldRegex, '<strong>$1</strong>');
+    }
+
     // Funzione per visualizzare un messaggio
     function displayMessage(role, content) {
         const messageDiv = document.createElement('div');
@@ -118,14 +133,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 hljs.highlightElement(code);
             } else {
                 const textParagraph = document.createElement('p');
-                textParagraph.textContent = part.text.trim();
+                // Usa innerHTML invece di textContent per supportare l'HTML
+                textParagraph.innerHTML = formatBoldText(part.text.trim());
                 contentDiv.appendChild(textParagraph);
             }
         });
 
         messageDiv.appendChild(contentDiv);
         chatWindow.appendChild(messageDiv);
-        chatWindow.scrollTop = chatWindow.scrollHeight;
+
+        // Scrolla la chat per mostrare il nuovo messaggio
+        messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     // Funzione per verificare se il messaggio contiene un blocco di codice
@@ -143,13 +161,26 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Gestione dell'invio del messaggio
+    // Funzione per mostrare l'animazione di caricamento
+    function showLoading() {
+        loadingIndicator.style.display = 'block';
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // Funzione per nascondere l'animazione di caricamento
+    function hideLoading() {
+        loadingIndicator.style.display = 'none';
+    }
+
+    // Modifica dell'evento di invio del messaggio
     sendButton.addEventListener('click', () => {
         const message = userInput.value.trim();
         if (message === '') return;
 
         displayMessage('user', message);
         userInput.value = '';
+
+        showLoading(); // Mostra l'animazione di caricamento
 
         fetch('/api/chat', {
             method: 'POST',
@@ -161,12 +192,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 message: message
             })
         })
-            .then(response => response.json())
-            .then(data => {
-                currentConversationId = data.conversation_id;
-                displayMessage('assistant', data.response);
-            })
-            .catch(error => console.error('Errore nella comunicazione con l\'API:', error));
+        .then(response => response.json())
+        .then(data => {
+            currentConversationId = data.conversation_id;
+            hideLoading(); // Nasconde l'animazione una volta ricevuta la risposta
+            displayMessage('assistant', data.response);
+        })
+        .catch(error => {
+            console.error('Errore nella comunicazione con l\'API:', error);
+            hideLoading(); // Nasconde l'animazione anche in caso di errore
+        });
     });
 
     // Creazione di una nuova conversazione
@@ -236,3 +271,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     
 });
+
+
