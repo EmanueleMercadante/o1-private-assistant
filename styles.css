@@ -389,19 +389,19 @@ header h1 {
     font-style: italic;
 }
 
-/* Titolo di livello 3 (###) - il più grande */
+/* Titolo di livello 3 (###) - il più PICCOLO */
 .title-level-3 {
-    font-size: 1.4em; /* Aumenta la dimensione del 40% */
+    font-size: 1.18em; /* Aumenta la dimensione del 40% */
 }
 
 /* Titolo di livello 2 (##) */
 .title-level-2 {
-    font-size: 1.3em; /* Aumenta la dimensione del 30% */
+    font-size: 1.28em; /* Aumenta la dimensione del 30% */
 }
 
 /* Titolo di livello 1 (#) */
 .title-level-1 {
-    font-size: 1.2em; /* Aumenta la dimensione del 20% */
+    font-size: 1.38em; /* Aumenta la dimensione del 20% */
 }
 
 
