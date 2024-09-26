@@ -146,8 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 separatorDiv.classList.add('separator');
                 contentDiv.appendChild(separatorDiv);
             } else if (part.type === 'title') {
-                const titleElement = document.createElement('h3');
-                titleElement.classList.add('message-title');
+                const titleElement = document.createElement('div');
+                titleElement.classList.add('message-title', `title-level-${part.level}`);
                 titleElement.innerHTML = formatBoldText(part.text);
                 contentDiv.appendChild(titleElement);
             } else {
@@ -316,57 +316,62 @@ function hideLoading() {
     // Funzione per suddividere il testo in parti di testo, separatori e titoli
     function parseTextParts(text, parts) {
         const separatorRegex = /^---$/gm;
-        const titleRegex = /^###\s*(.*)$/gm;
+        const titleRegex = /^(#{1,3})\s*(.*)$/gm;
         let lastIndex = 0;
         let match;
     
-        while (lastIndex < text.length) {
-            let nextSeparator = separatorRegex.exec(text);
-            let nextTitle = titleRegex.exec(text);
-    
-            let nextMatch = null;
-    
-            if (nextSeparator && nextTitle) {
-                nextMatch = nextSeparator.index < nextTitle.index ? nextSeparator : nextTitle;
-            } else if (nextSeparator) {
-                nextMatch = nextSeparator;
-            } else if (nextTitle) {
-                nextMatch = nextTitle;
+        while ((match = titleRegex.exec(text)) !== null) {
+            // Testo prima del titolo
+            if (match.index > lastIndex) {
+                const precedingText = text.substring(lastIndex, match.index);
+                parseSeparatorsAndText(precedingText, parts);
             }
     
-            if (nextMatch) {
-                if (nextMatch.index > lastIndex) {
-                    // Testo prima del separatore o titolo
-                    parts.push({
-                        type: 'text',
-                        text: text.substring(lastIndex, nextMatch.index)
-                    });
-                }
+            // Aggiungi il titolo con il livello
+            const level = match[1].length; // Numero di '#'
+            const titleText = match[2].trim();
     
-                if (nextMatch === nextSeparator) {
-                    // Aggiungi il separatore
-                    parts.push({ type: 'separator' });
-                    separatorRegex.lastIndex = nextMatch.index + nextMatch[0].length;
-                    titleRegex.lastIndex = separatorRegex.lastIndex;
-                } else if (nextMatch === nextTitle) {
-                    // Aggiungi il titolo
-                    parts.push({
-                        type: 'title',
-                        text: nextMatch[1].trim()
-                    });
-                    titleRegex.lastIndex = nextMatch.index + nextMatch[0].length;
-                    separatorRegex.lastIndex = titleRegex.lastIndex;
-                }
+            parts.push({
+                type: 'title',
+                level: level,
+                text: titleText
+            });
     
-                lastIndex = nextMatch.index + nextMatch[0].length;
-            } else {
-                // Nessun altro match, aggiungi il testo rimanente
+            lastIndex = titleRegex.lastIndex;
+        }
+    
+        // Testo dopo l'ultimo titolo
+        if (lastIndex < text.length) {
+            const remainingText = text.substring(lastIndex);
+            parseSeparatorsAndText(remainingText, parts);
+        }
+    }
+    
+    // Funzione per suddividere il testo in separatori e testo normale
+    function parseSeparatorsAndText(text, parts) {
+        const separatorRegex = /^---$/gm;
+        let lastIndex = 0;
+        let match;
+    
+        while ((match = separatorRegex.exec(text)) !== null) {
+            // Testo prima del separatore
+            if (match.index > lastIndex) {
                 parts.push({
                     type: 'text',
-                    text: text.substring(lastIndex)
+                    text: text.substring(lastIndex, match.index)
                 });
-                break;
             }
+            // Aggiungi il separatore
+            parts.push({ type: 'separator' });
+            lastIndex = separatorRegex.lastIndex;
+        }
+    
+        // Testo dopo l'ultimo separatore
+        if (lastIndex < text.length) {
+            parts.push({
+                type: 'text',
+                text: text.substring(lastIndex)
+            });
         }
     }
 
