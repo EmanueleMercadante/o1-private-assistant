@@ -106,21 +106,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatBoldText(text) {
         // Usa una regex per trovare il testo tra **< e >**
         const boldRegex = /\*\*<(.*?)>\*\*/g;
-        // Sostituisci con il testo in grassetto
-        return text.replace(boldRegex, '<strong>$1</strong>');
+        // Sostituisci con il testo in grassetto e dimensione aumentata
+        return text.replace(boldRegex, '<strong class="highlighted-text">$1</strong>');
     }
 
     // Funzione per visualizzare un messaggio
     function displayMessage(role, content) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', role);
-
+    
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('content');
-
-        // Suddividi il contenuto in parti di testo e blocchi di codice
+    
+        // Suddividi il contenuto in parti di testo, codice e separatori
         const messageParts = parseMessageContent(content);
-
+    
         messageParts.forEach(part => {
             if (part.type === 'code') {
                 const pre = document.createElement('pre');
@@ -131,17 +131,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 contentDiv.appendChild(pre);
                 // Inizializza Highlight.js
                 hljs.highlightElement(code);
+            } else if (part.type === 'separator') {
+                const separatorDiv = document.createElement('div');
+                separatorDiv.classList.add('separator');
+                contentDiv.appendChild(separatorDiv);
             } else {
                 const textParagraph = document.createElement('p');
-                // Usa innerHTML invece di textContent per supportare l'HTML
                 textParagraph.innerHTML = formatBoldText(part.text.trim());
                 contentDiv.appendChild(textParagraph);
             }
         });
-
+    
         messageDiv.appendChild(contentDiv);
         chatWindow.appendChild(messageDiv);
-
+    
         // Scrolla la chat per mostrare il nuovo messaggio
         messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -162,24 +165,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    const loadingIndicator = document.createElement('div');
-    loadingIndicator.classList.add('loading-indicator');
-    loadingIndicator.innerHTML = `<span>Caricamento...</span>`;
+    // Variabile per il loading indicator
+let loadingIndicator = null;
+
+// Funzione per mostrare l'animazione di caricamento
+function showLoading() {
+    // Crea il loading indicator se non esiste
+    if (!loadingIndicator) {
+        loadingIndicator = document.createElement('div');
+        loadingIndicator.classList.add('loading-indicator');
+        loadingIndicator.innerHTML = `<span>Caricamento...</span>`;
+    }
+
+    // Aggiungi il loading indicator al chatWindow
     chatWindow.appendChild(loadingIndicator);
-    loadingIndicator.style.display = 'none';
 
-    // Funzione per mostrare l'animazione di caricamento
-    function showLoading() {
-        loadingIndicator.style.display = 'block';
-        chatWindow.scrollTop = chatWindow.scrollHeight;
+    // Scorri la chat fino alla fine per mostrare il loading indicator
+    loadingIndicator.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Funzione per nascondere l'animazione di caricamento
+function hideLoading() {
+    if (loadingIndicator) {
+        chatWindow.removeChild(loadingIndicator);
+        loadingIndicator = null; // Resetta la variabile
     }
+}
 
-    // Funzione per nascondere l'animazione di caricamento
-    function hideLoading() {
-        loadingIndicator.style.display = 'none';
-    }
-
-    // Modifica dell'evento di invio del messaggio
+    // Gestione dell'invio del messaggio
     sendButton.addEventListener('click', () => {
         const message = userInput.value.trim();
         if (message === '') return;
@@ -187,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         displayMessage('user', message);
         userInput.value = '';
 
-        showLoading(); // Mostra l'animazione di caricamento
+        showLoading(); // Mostra l'animazione di caricamento dopo aver visualizzato il messaggio dell'utente
 
         fetch('/api/chat', {
             method: 'POST',
@@ -235,43 +248,83 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carica le conversazioni all'avvio
     loadConversations();
 
-    // Funzione per visualizzare un messaggio
+    // Funzione per suddividere il testo in parti di testo e separatori
+function parseTextParts(text, parts) {
+    const separatorRegex = /^---$/gm;
+    let lastIndex = 0;
+    let match;
+    while ((match = separatorRegex.exec(text)) !== null) {
+        // Testo prima del separatore
+        if (match.index > lastIndex) {
+            parts.push({
+                type: 'text',
+                text: text.substring(lastIndex, match.index)
+            });
+        }
+        // Aggiungi il separatore
+        parts.push({
+            type: 'separator'
+        });
+        lastIndex = separatorRegex.lastIndex;
+    }
+    // Testo dopo l'ultimo separatore
+    if (lastIndex < text.length) {
+        parts.push({
+            type: 'text',
+            text: text.substring(lastIndex)
+        });
+    }
+}
     
 
     // Funzione per suddividere il messaggio in parti di testo e codice
     function parseMessageContent(content) {
-        const regex = /```(\w+)?\n([\s\S]*?)\n```/g;
+        // Regex per codice, separatori e testo
+        const codeRegex = /```(.*?)\n([\s\S]*?)\n```/g;
+        const separatorRegex = /^---$/gm;
         const parts = [];
         let lastIndex = 0;
-        let match;
-
-        while ((match = regex.exec(content)) !== null) {
-            // Testo prima del blocco di codice
-            if (match.index > lastIndex) {
-                parts.push({
-                    type: 'text',
-                    text: content.substring(lastIndex, match.index)
-                });
-            }
-
-            // Blocco di codice
-            parts.push({
+    
+        // Prima, troviamo tutti i blocchi di codice
+        let codeMatches;
+        const codeBlocks = [];
+        while ((codeMatches = codeRegex.exec(content)) !== null) {
+            codeBlocks.push({
                 type: 'code',
-                language: match[1],
-                code: match[2]
-            });
-
-            lastIndex = regex.lastIndex;
-        }
-
-        // Testo dopo l'ultimo blocco di codice
-        if (lastIndex < content.length) {
-            parts.push({
-                type: 'text',
-                text: content.substring(lastIndex)
+                language: codeMatches[1],
+                code: codeMatches[2],
+                start: codeMatches.index,
+                end: codeRegex.lastIndex
             });
         }
-
+    
+        // Ora, creiamo un array di parti miste (testo, codice, separatori)
+        let currentIndex = 0;
+        for (let i = 0; i <= content.length; i++) {
+            // Controlliamo se siamo all'inizio di un blocco di codice
+            const codeBlock = codeBlocks.find(cb => cb.start === i);
+            if (codeBlock) {
+                // Aggiungiamo il testo prima del blocco di codice, se presente
+                if (codeBlock.start > currentIndex) {
+                    const textPart = content.substring(currentIndex, codeBlock.start);
+                    parseTextParts(textPart, parts);
+                }
+                // Aggiungiamo il blocco di codice
+                parts.push({
+                    type: 'code',
+                    language: codeBlock.language,
+                    code: codeBlock.code
+                });
+                currentIndex = codeBlock.end;
+                i = codeBlock.end - 1;
+            } else if (i === content.length) {
+                // Aggiungiamo il testo rimanente alla fine
+                if (currentIndex < content.length) {
+                    const textPart = content.substring(currentIndex);
+                    parseTextParts(textPart, parts);
+                }
+            }
+        }
         return parts;
     }
 

@@ -356,3 +356,26 @@ header h1 {
         padding: 8px;
     }
 }
+
+
+
+
+
+
+
+
+
+
+.highlighted-text {
+    font-weight: bold;
+    font-size: 1.1em; /* Aumenta la dimensione del testo del 10% */
+}
+
+
+
+
+.separator {
+    height: 1px;
+    background-color: #ccc;
+    margin: 10px 0;
+}
