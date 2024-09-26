@@ -104,8 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Funzione per formattare il testo racchiuso tra **<testo>** in grassetto
     function formatBoldText(text) {
-        // Usa una regex per trovare il testo tra **< e >**
-        const boldRegex = /\*\*<(.*?)>\*\*/g;
+        // Regex per catturare **testo**
+        const boldRegex = /\*\*(.*?)\*\*/g;
         // Sostituisci con il testo in grassetto e dimensione aumentata
         return text.replace(boldRegex, '<strong class="highlighted-text">$1</strong>');
     }
