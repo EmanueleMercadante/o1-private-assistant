@@ -104,11 +104,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Funzione per formattare il testo racchiuso tra **<testo>** in grassetto
     function formatBoldText(text) {
-        // Regex per catturare **testo**
         const boldRegex = /\*\*(.*?)\*\*/g;
-        // Sostituisci con il testo in grassetto e dimensione aumentata
-        return text.replace(boldRegex, '<strong class="highlighted-text">$1</strong>');
+        const formattedText = text.replace(boldRegex, '<strong class="highlighted-text">$1</strong>');
+        // Applica la formattazione corsiva dopo aver applicato il grassetto
+        return formatItalicText(formattedText);
     }
+
+    // Funzione per formattare il testo racchiuso tra `testo` in corsivo
+    function formatItalicText(text) {
+        const italicRegex = /`([^`]+)`/g;
+        return text.replace(italicRegex, '<em>$1</em>');
+    }
+
+
+
+
 
     // Funzione per visualizzare un messaggio
     function displayMessage(role, content) {
@@ -118,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('content');
     
-        // Suddividi il contenuto in parti di testo, codice e separatori
+        // Suddividi il contenuto in parti di testo, codice, separatori e titoli
         const messageParts = parseMessageContent(content);
     
         messageParts.forEach(part => {
@@ -135,6 +145,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const separatorDiv = document.createElement('div');
                 separatorDiv.classList.add('separator');
                 contentDiv.appendChild(separatorDiv);
+            } else if (part.type === 'title') {
+                const titleElement = document.createElement('h3');
+                titleElement.classList.add('message-title');
+                titleElement.innerHTML = formatBoldText(part.text);
+                contentDiv.appendChild(titleElement);
             } else {
                 const textParagraph = document.createElement('p');
                 textParagraph.innerHTML = formatBoldText(part.text.trim());
@@ -249,43 +264,13 @@ function hideLoading() {
     loadConversations();
 
     // Funzione per suddividere il testo in parti di testo e separatori
-function parseTextParts(text, parts) {
-    const separatorRegex = /^---$/gm;
-    let lastIndex = 0;
-    let match;
-    while ((match = separatorRegex.exec(text)) !== null) {
-        // Testo prima del separatore
-        if (match.index > lastIndex) {
-            parts.push({
-                type: 'text',
-                text: text.substring(lastIndex, match.index)
-            });
-        }
-        // Aggiungi il separatore
-        parts.push({
-            type: 'separator'
-        });
-        lastIndex = separatorRegex.lastIndex;
-    }
-    // Testo dopo l'ultimo separatore
-    if (lastIndex < text.length) {
-        parts.push({
-            type: 'text',
-            text: text.substring(lastIndex)
-        });
-    }
-}
-    
-
-    // Funzione per suddividere il messaggio in parti di testo e codice
     function parseMessageContent(content) {
-        // Regex per codice, separatori e testo
+        // Regex per codice, separatori, titoli e testo
         const codeRegex = /```(.*?)\n([\s\S]*?)\n```/g;
-        const separatorRegex = /^---$/gm;
         const parts = [];
         let lastIndex = 0;
     
-        // Prima, troviamo tutti i blocchi di codice
+        // Trova tutti i blocchi di codice
         let codeMatches;
         const codeBlocks = [];
         while ((codeMatches = codeRegex.exec(content)) !== null) {
@@ -298,18 +283,18 @@ function parseTextParts(text, parts) {
             });
         }
     
-        // Ora, creiamo un array di parti miste (testo, codice, separatori)
+        // Crea un array di parti miste (testo, codice, separatori, titoli)
         let currentIndex = 0;
         for (let i = 0; i <= content.length; i++) {
-            // Controlliamo se siamo all'inizio di un blocco di codice
+            // Controlla se siamo all'inizio di un blocco di codice
             const codeBlock = codeBlocks.find(cb => cb.start === i);
             if (codeBlock) {
-                // Aggiungiamo il testo prima del blocco di codice, se presente
+                // Aggiungi il testo prima del blocco di codice, se presente
                 if (codeBlock.start > currentIndex) {
                     const textPart = content.substring(currentIndex, codeBlock.start);
                     parseTextParts(textPart, parts);
                 }
-                // Aggiungiamo il blocco di codice
+                // Aggiungi il blocco di codice
                 parts.push({
                     type: 'code',
                     language: codeBlock.language,
@@ -318,7 +303,7 @@ function parseTextParts(text, parts) {
                 currentIndex = codeBlock.end;
                 i = codeBlock.end - 1;
             } else if (i === content.length) {
-                // Aggiungiamo il testo rimanente alla fine
+                // Aggiungi il testo rimanente alla fine
                 if (currentIndex < content.length) {
                     const textPart = content.substring(currentIndex);
                     parseTextParts(textPart, parts);
@@ -326,6 +311,63 @@ function parseTextParts(text, parts) {
             }
         }
         return parts;
+    }
+    
+    // Funzione per suddividere il testo in parti di testo, separatori e titoli
+    function parseTextParts(text, parts) {
+        const separatorRegex = /^---$/gm;
+        const titleRegex = /^###\s*(.*)$/gm;
+        let lastIndex = 0;
+        let match;
+    
+        while (lastIndex < text.length) {
+            let nextSeparator = separatorRegex.exec(text);
+            let nextTitle = titleRegex.exec(text);
+    
+            let nextMatch = null;
+    
+            if (nextSeparator && nextTitle) {
+                nextMatch = nextSeparator.index < nextTitle.index ? nextSeparator : nextTitle;
+            } else if (nextSeparator) {
+                nextMatch = nextSeparator;
+            } else if (nextTitle) {
+                nextMatch = nextTitle;
+            }
+    
+            if (nextMatch) {
+                if (nextMatch.index > lastIndex) {
+                    // Testo prima del separatore o titolo
+                    parts.push({
+                        type: 'text',
+                        text: text.substring(lastIndex, nextMatch.index)
+                    });
+                }
+    
+                if (nextMatch === nextSeparator) {
+                    // Aggiungi il separatore
+                    parts.push({ type: 'separator' });
+                    separatorRegex.lastIndex = nextMatch.index + nextMatch[0].length;
+                    titleRegex.lastIndex = separatorRegex.lastIndex;
+                } else if (nextMatch === nextTitle) {
+                    // Aggiungi il titolo
+                    parts.push({
+                        type: 'title',
+                        text: nextMatch[1].trim()
+                    });
+                    titleRegex.lastIndex = nextMatch.index + nextMatch[0].length;
+                    separatorRegex.lastIndex = titleRegex.lastIndex;
+                }
+    
+                lastIndex = nextMatch.index + nextMatch[0].length;
+            } else {
+                // Nessun altro match, aggiungi il testo rimanente
+                parts.push({
+                    type: 'text',
+                    text: text.substring(lastIndex)
+                });
+                break;
+            }
+        }
     }
 
 

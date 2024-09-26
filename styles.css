@@ -108,7 +108,7 @@ header h1 {
     display: inline-block;
     padding: 12px 15px;
     border-radius: 18px;
-    max-width: 70%;
+    max-width: 80%;
     word-wrap: break-word;
     font-size: 16px;
     line-height: 1.4;
@@ -378,4 +378,21 @@ header h1 {
     height: 1px;
     background-color: #ccc;
     margin: 10px 0;
+}
+
+
+
+
+.message-title {
+    font-style: italic;
+    font-size: 1.2em; /* Aumenta la dimensione del testo del 20% */
+    margin: 10px 0;
+}
+
+
+
+
+/* Stile per il testo in corsivo */
+.content em {
+    font-style: italic;
 }
