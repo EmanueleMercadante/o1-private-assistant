@@ -161,6 +161,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.classList.add('loading-indicator');
+    loadingIndicator.innerHTML = `<span>Caricamento...</span>`;
+    chatWindow.appendChild(loadingIndicator);
+    loadingIndicator.style.display = 'none';
+
     // Funzione per mostrare l'animazione di caricamento
     function showLoading() {
         loadingIndicator.style.display = 'block';
