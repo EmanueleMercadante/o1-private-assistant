@@ -27,6 +27,10 @@ header h1 {
     margin-bottom: auto;
 }
 
+header span{
+    color: #57ff5c;
+}
+
 #conversation-list {
     box-sizing: border-box;
     width: 20%;
