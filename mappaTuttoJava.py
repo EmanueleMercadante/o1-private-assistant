@@ -11,7 +11,7 @@ def map_dir_with_java_content(path):
             else:
                 file_entry = {'type': 'file', 'name': name}
                 # If it's a .java file, read its content.
-                if not name.endswith(".py") and not name.endswith(".jpeg") and not name.endswith(".jpg") and not name.endswith(".txt") and not name.endswith("."):
+                if not name.endswith(".py") and not name.endswith(".jpeg") and not name.endswith(".jpg") and not name.endswith(".txt"):
                     with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
                         file_entry["content"] = f.read()
                 dir_map['children'].append(file_entry)
