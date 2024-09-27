@@ -14,9 +14,10 @@ header {
     display: flex;
     position: fixed;
     justify-content: center;
-    height: 11vh;
+    height: 8vh;
     width: 100%;
-    background-color: #360a81;
+    border-bottom: 2px solid rgb(0, 0, 0);
+    background: linear-gradient(135deg, rgb(39, 39, 76), rgb(88, 0, 88) 70%);
     color: white;
     z-index: 1;
 }
@@ -34,7 +35,7 @@ header h1 {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 20px 20px 20px; /* Aggiustamento padding per spazio sotto l'header */
-    margin-top: 11vh;
+    margin-top: 8vh;
 }
 
 
@@ -79,7 +80,7 @@ header h1 {
     padding-left: 30px; /* Aggiustamento padding per spazio sotto l'header */
     padding-right: 30px; /* Aggiustamento padding per spazio sotto l'header */
     border-radius: 10px;
-    margin-top: 11vh;
+    margin-top: 8vh;
     position: relative;
 }
 
