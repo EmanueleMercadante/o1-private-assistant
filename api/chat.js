@@ -10,12 +10,39 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration);
 
-// Configurazione del client PostgreSQL
-const client = new Client({
-  connectionString: process.env.DATABASE_URL || 'postgres://default:8nCx5XIZurDd@ep-soft-tooth-a45f5lao-pooler.us-east-1.aws.neon.tech:5432/verceldb?sslmode=require'
+// Configurazione iniziale del client PostgreSQL
+let client = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false, // Se necessario per il tuo provider
+  },
 });
 
+// Connessione iniziale al database
 client.connect();
+
+// Funzione per riconnettere il client in caso di errore
+async function reconnectClient() {
+  try {
+    await client.end(); // Termina la connessione esistente
+  } catch (error) {
+    console.error('Errore nel terminare la connessione esistente:', error);
+  }
+
+  client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false, // Se necessario per il tuo provider
+    },
+  });
+
+  try {
+    await client.connect(); // Riconnette il client
+  } catch (error) {
+    console.error('Errore nel riconnettere il client:', error);
+    throw error;
+  }
+}
 
 module.exports = async (req, res) => {
   if (req.method === 'POST') {
@@ -33,9 +60,20 @@ module.exports = async (req, res) => {
         );
         conversationId = result.rows[0].conversation_id;
       } catch (error) {
-        console.error('Errore nella creazione della nuova conversazione:', error);
-        res.status(500).json({ error: 'Errore interno del server' });
-        return;
+        if (error.code === 'ECONNRESET' || error.message.includes('Connection terminated unexpectedly')) {
+          // La connessione è stata interrotta, prova a riconnettere
+          await reconnectClient();
+          // Riprova la query
+          const result = await client.query(
+            'INSERT INTO conversations (conversation_name) VALUES ($1) RETURNING conversation_id',
+            ['Nuova Conversazione']
+          );
+          conversationId = result.rows[0].conversation_id;
+        } else {
+          console.error('Errore nella creazione della nuova conversazione:', error);
+          res.status(500).json({ error: 'Errore interno del server' });
+          return;
+        }
       }
     }
 
@@ -44,9 +82,16 @@ module.exports = async (req, res) => {
     try {
       messages = await getMessages(conversationId);
     } catch (error) {
-      console.error('Errore nel recupero dei messaggi:', error);
-      res.status(500).json({ error: 'Errore interno del server' });
-      return;
+      if (error.code === 'ECONNRESET' || error.message.includes('Connection terminated unexpectedly')) {
+        // La connessione è stata interrotta, prova a riconnettere
+        await reconnectClient();
+        // Riprova la funzione
+        messages = await getMessages(conversationId);
+      } else {
+        console.error('Errore nel recupero dei messaggi:', error);
+        res.status(500).json({ error: 'Errore interno del server' });
+        return;
+      }
     }
 
     // Aggiungi il messaggio dell'utente alla cronologia
@@ -80,22 +125,55 @@ module.exports = async (req, res) => {
 
 // Funzione per ottenere i messaggi di una conversazione
 async function getMessages(conversationId) {
-  const res = await client.query(
-    'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
-    [conversationId]
-  );
+  try {
+    const res = await client.query(
+      'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+      [conversationId]
+    );
 
-  // Mappa i messaggi nel formato richiesto dall'API di OpenAI
-  return res.rows.map((row) => ({
-    role: row.role,
-    content: row.content,
-  }));
+    // Mappa i messaggi nel formato richiesto dall'API di OpenAI
+    return res.rows.map((row) => ({
+      role: row.role,
+      content: row.content,
+    }));
+  } catch (error) {
+    if (error.code === 'ECONNRESET' || error.message.includes('Connection terminated unexpectedly')) {
+      // La connessione è stata interrotta, prova a riconnettere
+      await reconnectClient();
+      // Riprova la query
+      const res = await client.query(
+        'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+        [conversationId]
+      );
+
+      return res.rows.map((row) => ({
+        role: row.role,
+        content: row.content,
+      }));
+    } else {
+      throw error;
+    }
+  }
 }
 
 // Funzione per salvare un messaggio nel database
 async function saveMessage(conversationId, role, content) {
-  await client.query(
-    'INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)',
-    [conversationId, role, content]
-  );
+  try {
+    await client.query(
+      'INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)',
+      [conversationId, role, content]
+    );
+  } catch (error) {
+    if (error.code === 'ECONNRESET' || error.message.includes('Connection terminated unexpectedly')) {
+      // La connessione è stata interrotta, prova a riconnettere
+      await reconnectClient();
+      // Riprova la query
+      await client.query(
+        'INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)',
+        [conversationId, role, content]
+      );
+    } else {
+      throw error;
+    }
+  }
 }
