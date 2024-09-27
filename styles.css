@@ -176,13 +176,12 @@ header h1 {
 /* Stili per il codice evidenziato */
 .content pre {
     position: relative;
-    background-color: #232323; /* Tonalità leggermente più chiara del nero puro */
+    background-color: #1e1e1e; /* Tonalità leggermente più chiara del nero puro */
     color: #e4e6eb;
     padding: 10px;
     border-radius: 8px;
     overflow-x: auto;
     margin: 10px 0;
-    display: block; /* Assicura che il pre sia un elemento a blocco */
 }
 
 /* Rimuovi lo sfondo predefinito del codice */
@@ -192,24 +191,16 @@ header h1 {
 }
 
 /* Stili per i numeri di riga */
-.hljs-ln-line {
-    display: flex; /* Allinea i numeri di riga e il codice orizzontalmente */
-}
-
 .hljs-ln-numbers {
-    flex-shrink: 0;
     text-align: right;
     color: #888;
-    user-select: none;
-    pointer-events: none;
-    padding-right: 10px; /* Spazio tra numeri di riga e codice */
+    user-select: none; /* Impedisce la selezione */
+    pointer-events: none; /* Impedisce l'interazione */
 }
 
-.hljs-ln-code {
-    flex-grow: 1; /* Permette al codice di occupare lo spazio rimanente */
+td.hljs-ln-line.hljs-ln-code{
+    padding-left: 10px;
 }
-
-
 /* Pulsante di copia */
 .copy-button {
     position: absolute;
