@@ -199,11 +199,7 @@ header h1 {
 }
 
 /* Regola il padding del codice */
-.hljs-ln td {
-    margin-left: 8px;
-}
-
-.hljs-ln-code{
+.hljs-ln-line{
     margin-left: 8px;
 }
 /* Pulsante di copia */
