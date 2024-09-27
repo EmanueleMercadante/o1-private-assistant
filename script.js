@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
             // Crea il pulsante di copia
             const copyButton = document.createElement('button');
-            copyButton.textContent = 'Copia Codice';
+            copyButton.textContent = 'Copia';
             copyButton.classList.add('copy-button');
     
             copyButton.addEventListener('click', () => {

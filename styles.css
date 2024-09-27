@@ -196,14 +196,16 @@ header h1 {
     color: #888;
     user-select: none; /* Impedisce la selezione */
     pointer-events: none; /* Impedisce l'interazione */
-    margin-right: 10px;
 }
 
 /* Regola il padding del codice */
-.hljs-ln-code {
-    padding-left: 10px;
+.hljs-ln td {
+    padding-left: 8px;
 }
 
+.hljs-ln-code{
+    padding-left: 8px;
+}
 /* Pulsante di copia */
 .copy-button {
     position: absolute;
