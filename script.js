@@ -103,16 +103,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Funzione per formattare il testo racchiuso tra **<testo>** in grassetto
-    function formatText(text) {
-        // Applica il grassetto
+    function formatBoldText(text) {
         const boldRegex = /\*\*(.*?)\*\*/g;
-        let formattedText = text.replace(boldRegex, '<strong class="highlighted-text">$1</strong>');
-    
-        // Applica il codice inline per il testo tra backtick singoli
-        const inlineCodeRegex = /`([^`]+)`/g;
-        formattedText = formattedText.replace(inlineCodeRegex, '<code class="inline-code">$1</code>');
-    
-        return formattedText;
+        const formattedText = text.replace(boldRegex, '<strong class="highlighted-text">$1</strong>');
+        // Applica la formattazione corsiva dopo aver applicato il grassetto
+        return formatItalicText(formattedText);
+    }
+
+    // Funzione per formattare il testo racchiuso tra `testo` in corsivo
+    function formatItalicText(text) {
+        const italicRegex = /`([^`]+)`/g;
+        return text.replace(italicRegex, '<em>$1</em>');
     }
 
 
@@ -149,9 +150,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 titleElement.classList.add('message-title', `title-level-${part.level}`);
                 titleElement.innerHTML = formatBoldText(part.text);
                 contentDiv.appendChild(titleElement);
-            } else if (part.type === 'text') {
+            } else {
                 const textParagraph = document.createElement('p');
-                textParagraph.innerHTML = formatText(part.text.trim());
+                textParagraph.innerHTML = formatBoldText(part.text.trim());
                 contentDiv.appendChild(textParagraph);
             }
         });
@@ -264,51 +265,34 @@ function hideLoading() {
 
     // Funzione per suddividere il testo in parti di testo e separatori
     function parseMessageContent(content) {
-        // Regex per codice, separatori, titoli e testo
-        const codeRegex = /```(.*?)\n([\s\S]*?)\n```/g;
+        const codeRegex = /```(\w*)\s*\n?([\s\S]*?)\n?```/g;
         const parts = [];
         let lastIndex = 0;
+        let match;
     
-        // Trova tutti i blocchi di codice
-        let codeMatches;
-        const codeBlocks = [];
-        while ((codeMatches = codeRegex.exec(content)) !== null) {
-            codeBlocks.push({
-                type: 'code',
-                language: codeMatches[1],
-                code: codeMatches[2],
-                start: codeMatches.index,
-                end: codeRegex.lastIndex
-            });
-        }
-    
-        // Crea un array di parti miste (testo, codice, separatori, titoli)
-        let currentIndex = 0;
-        for (let i = 0; i <= content.length; i++) {
-            // Controlla se siamo all'inizio di un blocco di codice
-            const codeBlock = codeBlocks.find(cb => cb.start === i);
-            if (codeBlock) {
-                // Aggiungi il testo prima del blocco di codice, se presente
-                if (codeBlock.start > currentIndex) {
-                    const textPart = content.substring(currentIndex, codeBlock.start);
-                    parseTextParts(textPart, parts);
-                }
-                // Aggiungi il blocco di codice
-                parts.push({
-                    type: 'code',
-                    language: codeBlock.language,
-                    code: codeBlock.code
-                });
-                currentIndex = codeBlock.end;
-                i = codeBlock.end - 1;
-            } else if (i === content.length) {
-                // Aggiungi il testo rimanente alla fine
-                if (currentIndex < content.length) {
-                    const textPart = content.substring(currentIndex);
-                    parseTextParts(textPart, parts);
-                }
+        while ((match = codeRegex.exec(content)) !== null) {
+            // Testo prima del blocco di codice
+            if (match.index > lastIndex) {
+                const textBefore = content.substring(lastIndex, match.index);
+                parseTextParts(textBefore, parts);
             }
+    
+            // Blocco di codice
+            parts.push({
+                type: 'code',
+                language: match[1] || '',
+                code: match[2]
+            });
+    
+            lastIndex = codeRegex.lastIndex;
         }
+    
+        // Testo dopo l'ultimo blocco di codice
+        if (lastIndex < content.length) {
+            const textAfter = content.substring(lastIndex);
+            parseTextParts(textAfter, parts);
+        }
+    
         return parts;
     }
     
