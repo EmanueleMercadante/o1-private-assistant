@@ -103,17 +103,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Funzione per formattare il testo racchiuso tra **<testo>** in grassetto
-    function formatBoldText(text) {
+    function formatText(text) {
+        // Applica il grassetto
         const boldRegex = /\*\*(.*?)\*\*/g;
-        const formattedText = text.replace(boldRegex, '<strong class="highlighted-text">$1</strong>');
-        // Applica la formattazione corsiva dopo aver applicato il grassetto
-        return formatItalicText(formattedText);
-    }
-
-    // Funzione per formattare il testo racchiuso tra `testo` in corsivo
-    function formatItalicText(text) {
-        const italicRegex = /`([^`]+)`/g;
-        return text.replace(italicRegex, '<em>$1</em>');
+        let formattedText = text.replace(boldRegex, '<strong class="highlighted-text">$1</strong>');
+    
+        // Applica il codice inline per il testo tra backtick singoli
+        const inlineCodeRegex = /`([^`]+)`/g;
+        formattedText = formattedText.replace(inlineCodeRegex, '<code class="inline-code">$1</code>');
+    
+        return formattedText;
     }
 
 
@@ -150,9 +149,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 titleElement.classList.add('message-title', `title-level-${part.level}`);
                 titleElement.innerHTML = formatBoldText(part.text);
                 contentDiv.appendChild(titleElement);
-            } else {
+            } else if (part.type === 'text') {
                 const textParagraph = document.createElement('p');
-                textParagraph.innerHTML = formatBoldText(part.text.trim());
+                textParagraph.innerHTML = formatText(part.text.trim());
                 contentDiv.appendChild(textParagraph);
             }
         });
