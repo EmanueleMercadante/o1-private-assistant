@@ -208,7 +208,7 @@ header h1 {
     position: absolute;
     top: 8px;
     right: 8px;
-    background-color: #4CAF50;
+    background-color: #438545;
     border: none;
     color: white;
     padding: 4px 8px;
@@ -455,5 +455,26 @@ header h1 {
     font-family: monospace;
     background-color: #f0f0f0;
     padding: 2px 4px;
+    border-radius: 4px;
+}
+
+
+
+
+/* Stile per il testo in corsivo racchiuso tra asterischi singoli */
+.asterisk-text {
+    font-style: italic;
+    background-color: #f9f9f9; /* Leggero sfondo per differenziarlo */
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+/* Stile per il testo speciale */
+.special-text {
+    background-color: #e6f7ff;
+    color: #0050b3;
+    padding: 10px;
+    border-left: 4px solid #1890ff;
+    margin: 10px 0;
     border-radius: 4px;
 }

@@ -112,8 +112,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Funzione per formattare il testo racchiuso tra `testo` in corsivo
     function formatItalicText(text) {
-        const italicRegex = /`([^`]+)`/g;
-        return text.replace(italicRegex, '<em>$1</em>');
+        // Applica il codice inline per il testo tra backtick singoli
+        const inlineCodeRegex = /`([^`]+)`/g;
+        let formattedText = text.replace(inlineCodeRegex, '<code class="inline-code">$1</code>');
+    
+        // Applica il corsivo per il testo racchiuso tra asterischi singoli
+        const italicRegex = /\*([^\*\s][^\*]*?)\*/g;
+        formattedText = formattedText.replace(italicRegex, '<em class="asterisk-text">$1</em>');
+    
+        return formattedText;
     }
 
 
@@ -144,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
                 // Crea il pulsante di copia
                 const copyButton = document.createElement('button');
-                copyButton.textContent = 'Copia Codice';
+                copyButton.textContent = 'Copia';
                 copyButton.classList.add('copy-button');
     
                 copyButton.addEventListener('click', () => {
@@ -177,6 +184,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 titleElement.classList.add('message-title', `title-level-${part.level}`);
                 titleElement.innerHTML = formatBoldText(part.text);
                 contentDiv.appendChild(titleElement);
+            } else if (part.type === 'special') {
+                const specialElement = document.createElement('p');
+                specialElement.classList.add('special-text');
+                specialElement.innerHTML = formatBoldText(part.text.trim());
+                contentDiv.appendChild(specialElement);
             } else {
                 const textParagraph = document.createElement('p');
                 textParagraph.innerHTML = formatBoldText(part.text.trim());
@@ -327,61 +339,67 @@ function hideLoading() {
     function parseTextParts(text, parts) {
         const separatorRegex = /^---$/gm;
         const titleRegex = /^(#{1,3})\s*(.*)$/gm;
+        const specialLineRegex = /^\*([a-zA-Z].*)$/gm;
         let lastIndex = 0;
         let match;
     
-        while ((match = titleRegex.exec(text)) !== null) {
-            // Testo prima del titolo
-            if (match.index > lastIndex) {
-                const precedingText = text.substring(lastIndex, match.index);
-                parseSeparatorsAndText(precedingText, parts);
-            }
+        while (lastIndex < text.length) {
+            // Trova il prossimo match tra separatore, titolo o linea speciale
+            const indices = [];
+            separatorRegex.lastIndex = lastIndex;
+            titleRegex.lastIndex = lastIndex;
+            specialLineRegex.lastIndex = lastIndex;
     
-            // Aggiungi il titolo con il livello
-            const level = match[1].length; // Numero di '#'
-            const titleText = match[2].trim();
+            const separatorMatch = separatorRegex.exec(text);
+            const titleMatch = titleRegex.exec(text);
+            const specialMatch = specialLineRegex.exec(text);
     
-            parts.push({
-                type: 'title',
-                level: level,
-                text: titleText
-            });
+            if (separatorMatch) indices.push({ type: 'separator', match: separatorMatch });
+            if (titleMatch) indices.push({ type: 'title', match: titleMatch });
+            if (specialMatch) indices.push({ type: 'special', match: specialMatch });
     
-            lastIndex = titleRegex.lastIndex;
-        }
-    
-        // Testo dopo l'ultimo titolo
-        if (lastIndex < text.length) {
-            const remainingText = text.substring(lastIndex);
-            parseSeparatorsAndText(remainingText, parts);
-        }
-    }
-    
-    // Funzione per suddividere il testo in separatori e testo normale
-    function parseSeparatorsAndText(text, parts) {
-        const separatorRegex = /^---$/gm;
-        let lastIndex = 0;
-        let match;
-    
-        while ((match = separatorRegex.exec(text)) !== null) {
-            // Testo prima del separatore
-            if (match.index > lastIndex) {
+            if (indices.length === 0) {
+                // Nessun altro match, aggiungi il testo rimanente
                 parts.push({
                     type: 'text',
-                    text: text.substring(lastIndex, match.index)
+                    text: text.substring(lastIndex)
+                });
+                break;
+            }
+    
+            // Trova il match più vicino
+            indices.sort((a, b) => a.match.index - b.match.index);
+            const nextMatch = indices[0];
+    
+            // Testo prima del prossimo match
+            if (nextMatch.match.index > lastIndex) {
+                parts.push({
+                    type: 'text',
+                    text: text.substring(lastIndex, nextMatch.match.index)
                 });
             }
-            // Aggiungi il separatore
-            parts.push({ type: 'separator' });
-            lastIndex = separatorRegex.lastIndex;
-        }
     
-        // Testo dopo l'ultimo separatore
-        if (lastIndex < text.length) {
-            parts.push({
-                type: 'text',
-                text: text.substring(lastIndex)
-            });
+            // Aggiungi il match al parts
+            if (nextMatch.type === 'separator') {
+                parts.push({ type: 'separator' });
+                lastIndex = separatorRegex.lastIndex;
+            } else if (nextMatch.type === 'title') {
+                const level = nextMatch.match[1].length; // Numero di '#'
+                const titleText = nextMatch.match[2].trim();
+                parts.push({
+                    type: 'title',
+                    level: level,
+                    text: titleText
+                });
+                lastIndex = titleRegex.lastIndex;
+            } else if (nextMatch.type === 'special') {
+                const specialText = nextMatch.match[1].trim();
+                parts.push({
+                    type: 'special',
+                    text: specialText
+                });
+                lastIndex = specialLineRegex.lastIndex;
+            }
         }
     }
 
