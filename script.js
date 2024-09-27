@@ -128,19 +128,46 @@ document.addEventListener('DOMContentLoaded', () => {
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('content');
     
-        // Suddividi il contenuto in parti di testo, codice, separatori e titoli
+        // Suddividi il contenuto in parti
         const messageParts = parseMessageContent(content);
     
         messageParts.forEach(part => {
             if (part.type === 'code') {
                 const pre = document.createElement('pre');
                 const code = document.createElement('code');
-                code.textContent = part.code.trim();
                 code.classList.add(part.language || 'plaintext');
+    
+                // Assegna il contenuto del codice
+                code.textContent = part.code.trim(); // Usa textContent per evitare l'inserimento di HTML
+    
                 pre.appendChild(code);
+    
+                // Crea il pulsante di copia
+                const copyButton = document.createElement('button');
+                copyButton.textContent = 'Copia Codice';
+                copyButton.classList.add('copy-button');
+    
+                copyButton.addEventListener('click', () => {
+                    // Copia il codice negli appunti
+                    const codeText = part.code.trim();
+                    navigator.clipboard.writeText(codeText).then(() => {
+                        // Fornisci un feedback all'utente
+                        copyButton.textContent = 'Copiato!';
+                        setTimeout(() => {
+                            copyButton.textContent = 'Copia Codice';
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Errore nel copiare il codice:', err);
+                    });
+                });
+    
+                pre.appendChild(copyButton);
                 contentDiv.appendChild(pre);
-                // Inizializza Highlight.js
+    
+                // Inizializza Highlight.js sul blocco di codice
                 hljs.highlightElement(code);
+                // Inizializza i numeri di riga
+                hljs.lineNumbersBlock(code);
             } else if (part.type === 'separator') {
                 const separatorDiv = document.createElement('div');
                 separatorDiv.classList.add('separator');
