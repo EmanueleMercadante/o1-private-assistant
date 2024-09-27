@@ -124,68 +124,64 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayMessage(role, content) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', role);
+    
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('content');
     
         // Suddividi il contenuto in parti
         const messageParts = parseMessageContent(content);
+    
         messageParts.forEach(part => {
-          if (part.type === 'code') {
-            const pre = document.createElement('pre');
-            const code = document.createElement('code');
-            code.classList.add(part.language || 'plaintext');
+            if (part.type === 'code') {
+                const pre = document.createElement('pre');
+                const code = document.createElement('code');
+                code.classList.add(part.language || 'plaintext');
     
-            // Assegna il contenuto del codice
-            code.textContent = part.code.trim();
+                // Assegna il contenuto del codice
+                code.textContent = part.code.trim(); // Usa textContent per evitare l'inserimento di HTML
     
-            pre.appendChild(code);
+                pre.appendChild(code);
     
-            // Crea il pulsante di copia
-            const copyButton = document.createElement('button');
-            copyButton.textContent = 'Copia';
-            copyButton.classList.add('copy-button');
+                // Crea il pulsante di copia
+                const copyButton = document.createElement('button');
+                copyButton.textContent = 'Copia';
+                copyButton.classList.add('copy-button');
     
-            copyButton.addEventListener('click', () => {
-              // Copia il codice negli appunti
-              const codeText = part.code.trim();
-              navigator.clipboard.writeText(codeText).then(() => {
-                // Fornisci un feedback all'utente
-                copyButton.textContent = 'Copiato!';
-                setTimeout(() => {
-                  copyButton.textContent = 'Copia Codice';
-                }, 2000);
-              }).catch(err => {
-                console.error('Errore nel copiare il codice:', err);
-              });
-            });
+                copyButton.addEventListener('click', () => {
+                    // Copia il codice negli appunti
+                    const codeText = part.code.trim();
+                    navigator.clipboard.writeText(codeText).then(() => {
+                        // Fornisci un feedback all'utente
+                        copyButton.textContent = 'Copiato!';
+                        setTimeout(() => {
+                            copyButton.textContent = 'Copia';
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Errore nel copiare il codice:', err);
+                    });
+                });
     
-            pre.appendChild(copyButton);
-            contentDiv.appendChild(pre);
+                pre.appendChild(copyButton);
+                contentDiv.appendChild(pre);
     
-            // Inizializza Highlight.js sul blocco di codice
-            hljs.highlightElement(code);
-            // Inizializza i numeri di riga
-            hljs.lineNumbersBlock(code);
-          } else if (part.type === 'separator') {
-            const separatorDiv = document.createElement('div');
-            separatorDiv.classList.add('separator');
-            contentDiv.appendChild(separatorDiv);
-          } else if (part.type === 'title') {
-            const titleElement = document.createElement('div');
-            titleElement.classList.add('message-title', `title-level-${part.level}`);
-            titleElement.innerHTML = formatBoldText(part.text);
-            contentDiv.appendChild(titleElement);
-          } else if (part.type === 'special') {
-            // Gestione del testo speciale
-            const specialElement = document.createElement('p');
-            specialElement.classList.add('special-text');
-            specialElement.innerHTML = formatBoldText(part.text.trim());
-            contentDiv.appendChild(specialElement);
-          } else {
-            const textParagraph = document.createElement('p');
-            textParagraph.innerHTML = formatBoldText(part.text.trim());
-            contentDiv.appendChild(textParagraph);
-          }
+                // Inizializza Highlight.js sul blocco di codice
+                hljs.highlightElement(code);
+                // Inizializza i numeri di riga
+                hljs.lineNumbersBlock(code);
+            } else if (part.type === 'separator') {
+                const separatorDiv = document.createElement('div');
+                separatorDiv.classList.add('separator');
+                contentDiv.appendChild(separatorDiv);
+            } else if (part.type === 'title') {
+                const titleElement = document.createElement('div');
+                titleElement.classList.add('message-title', `title-level-${part.level}`);
+                titleElement.innerHTML = formatBoldText(part.text);
+                contentDiv.appendChild(titleElement);
+            } else {
+                const textParagraph = document.createElement('p');
+                textParagraph.innerHTML = formatBoldText(part.text.trim());
+                contentDiv.appendChild(textParagraph);
+            }
         });
     
         messageDiv.appendChild(contentDiv);
@@ -193,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
         // Scrolla la chat per mostrare il nuovo messaggio
         messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+    }
 
     // Funzione per verificare se il messaggio contiene un blocco di codice
     function isCodeBlock(text) {
@@ -331,69 +327,63 @@ function hideLoading() {
     function parseTextParts(text, parts) {
         const separatorRegex = /^---$/gm;
         const titleRegex = /^(#{1,3})\s*(.*)$/gm;
-        const specialLineRegex = /^\*([a-zA-Z].*?)\*$/gm;
         let lastIndex = 0;
         let match;
     
-        while (lastIndex < text.length) {
-          let nextSeparator = separatorRegex.exec(text);
-          let nextTitle = titleRegex.exec(text);
-          let nextSpecial = specialLineRegex.exec(text);
-    
-          let nextMatch = null;
-          let matchType = '';
-    
-          // Trova il match più vicino
-          if (nextSeparator && (!nextTitle || nextSeparator.index <= nextTitle.index) && (!nextSpecial || nextSeparator.index <= nextSpecial.index)) {
-            nextMatch = nextSeparator;
-            matchType = 'separator';
-          } else if (nextTitle && (!nextSpecial || nextTitle.index <= nextSpecial.index)) {
-            nextMatch = nextTitle;
-            matchType = 'title';
-          } else if (nextSpecial) {
-            nextMatch = nextSpecial;
-            matchType = 'special';
-          }
-    
-          if (nextMatch) {
-            if (nextMatch.index > lastIndex) {
-              // Testo prima del match
-              parts.push({
-                type: 'text',
-                text: text.substring(lastIndex, nextMatch.index)
-              });
+        while ((match = titleRegex.exec(text)) !== null) {
+            // Testo prima del titolo
+            if (match.index > lastIndex) {
+                const precedingText = text.substring(lastIndex, match.index);
+                parseSeparatorsAndText(precedingText, parts);
             }
     
-            if (matchType === 'separator') {
-              parts.push({ type: 'separator' });
-              lastIndex = separatorRegex.lastIndex;
-            } else if (matchType === 'title') {
-              const level = nextMatch[1].length; // Numero di '#'
-              const titleText = nextMatch[2].trim();
-              parts.push({
+            // Aggiungi il titolo con il livello
+            const level = match[1].length; // Numero di '#'
+            const titleText = match[2].trim();
+    
+            parts.push({
                 type: 'title',
                 level: level,
                 text: titleText
-              });
-              lastIndex = titleRegex.lastIndex;
-            } else if (matchType === 'special') {
-              const specialText = nextMatch[1].trim();
-              parts.push({
-                type: 'special',
-                text: specialText
-              });
-              lastIndex = specialLineRegex.lastIndex;
-            }
-          } else {
-            // Nessun altro match, aggiungi il testo rimanente
-            parts.push({
-              type: 'text',
-              text: text.substring(lastIndex)
             });
-            break;
-          }
+    
+            lastIndex = titleRegex.lastIndex;
         }
-      }
+    
+        // Testo dopo l'ultimo titolo
+        if (lastIndex < text.length) {
+            const remainingText = text.substring(lastIndex);
+            parseSeparatorsAndText(remainingText, parts);
+        }
+    }
+    
+    // Funzione per suddividere il testo in separatori e testo normale
+    function parseSeparatorsAndText(text, parts) {
+        const separatorRegex = /^---$/gm;
+        let lastIndex = 0;
+        let match;
+    
+        while ((match = separatorRegex.exec(text)) !== null) {
+            // Testo prima del separatore
+            if (match.index > lastIndex) {
+                parts.push({
+                    type: 'text',
+                    text: text.substring(lastIndex, match.index)
+                });
+            }
+            // Aggiungi il separatore
+            parts.push({ type: 'separator' });
+            lastIndex = separatorRegex.lastIndex;
+        }
+    
+        // Testo dopo l'ultimo separatore
+        if (lastIndex < text.length) {
+            parts.push({
+                type: 'text',
+                text: text.substring(lastIndex)
+            });
+        }
+    }
 
 
     
