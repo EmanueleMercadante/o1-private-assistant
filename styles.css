@@ -237,6 +237,11 @@ td.hljs-ln-line.hljs-ln-code{
     background-color: #aaa;
 }
 
+
+pre ::-webkit-scrollbar {
+    height: 5px;
+}
+
 .conversation-item {
     position: relative;
     padding-right: 25px; /* Spazio per il pulsante 'x' */
