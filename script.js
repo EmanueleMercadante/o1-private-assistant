@@ -247,23 +247,31 @@ function hideLoading() {
         fetch('/api/chat', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                conversation_id: currentConversationId,
-                message: message
+              conversation_id: currentConversationId,
+              message: message,
+            }),
+          })
+            .then(async (response) => {
+              if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Errore nella risposta del server');
+              }
+              return response.json();
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            currentConversationId = data.conversation_id;
-            hideLoading(); // Nasconde l'animazione una volta ricevuta la risposta
-            displayMessage('assistant', data.response);
-        })
-        .catch(error => {
-            console.error('Errore nella comunicazione con l\'API:', error);
-            hideLoading(); // Nasconde l'animazione anche in caso di errore
-        });
+            .then((data) => {
+              currentConversationId = data.conversation_id;
+              hideLoading(); // Nasconde l'animazione una volta ricevuta la risposta
+              displayMessage('assistant', data.response);
+            })
+            .catch((error) => {
+              console.error('Errore nella comunicazione con l\'API:', error.message);
+              hideLoading(); // Nasconde l'animazione anche in caso di errore
+              // Puoi anche visualizzare un messaggio di errore all'utente, ad esempio:
+              displayMessage('assistant', 'Si è verificato un errore. Per favore riprova.');
+            });
     });
 
     // Creazione di una nuova conversazione
