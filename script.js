@@ -238,41 +238,40 @@ function hideLoading() {
     sendButton.addEventListener('click', () => {
         const message = userInput.value.trim();
         if (message === '') return;
-
+      
         displayMessage('user', message);
         userInput.value = '';
-
+      
         showLoading(); // Mostra l'animazione di caricamento dopo aver visualizzato il messaggio dell'utente
-
+      
         fetch('/api/chat', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              conversation_id: currentConversationId,
-              message: message,
-            }),
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            conversation_id: currentConversationId,
+            message: message,
+          }),
+        })
+          .then(async (response) => {
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Errore nella risposta del server');
+            }
+            return response.json();
           })
-            .then(async (response) => {
-              if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Errore nella risposta del server');
-              }
-              return response.json();
-            })
-            .then((data) => {
-              currentConversationId = data.conversation_id;
-              hideLoading(); // Nasconde l'animazione una volta ricevuta la risposta
-              displayMessage('assistant', data.response);
-            })
-            .catch((error) => {
-              console.error('Errore nella comunicazione con l\'API:', error.message);
-              hideLoading(); // Nasconde l'animazione anche in caso di errore
-              // Puoi anche visualizzare un messaggio di errore all'utente, ad esempio:
-              displayMessage('assistant', 'Si è verificato un errore. Per favore riprova.');
-            });
-    });
+          .then((data) => {
+            currentConversationId = data.conversation_id;
+            hideLoading(); // Nasconde l'animazione una volta ricevuta la risposta
+            displayMessage('assistant', data.response);
+          })
+          .catch((error) => {
+            console.error('Errore nella comunicazione con l\'API:', error.message);
+            hideLoading(); // Nasconde l'animazione anche in caso di errore
+            displayMessage('assistant', 'Si è verificato un errore. Per favore riprova.');
+          });
+      });
 
     // Creazione di una nuova conversazione
     newConversationButton.addEventListener('click', () => {
