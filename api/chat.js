@@ -54,7 +54,7 @@ module.exports = async (req, res) => {
     // Genera la risposta utilizzando l'API di OpenAI
     try {
       const completion = await openai.createChatCompletion({
-        model: 'o1-preview', // Sostituisci con il modello che preferisci
+        model: 'o1-mini', // Sostituisci con il modello che preferisci
         messages: messages,
       });
 
