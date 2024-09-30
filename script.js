@@ -124,72 +124,71 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayMessage(role, content) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', role);
-    
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('content');
-    
-        // Suddividi il contenuto in parti
-        const messageParts = parseMessageContent(content);
-    
-        messageParts.forEach(part => {
-            if (part.type === 'code' && role === 'assistant') {
-                const pre = document.createElement('pre');
-                const code = document.createElement('code');
-                code.classList.add(part.language || 'plaintext');
-    
-                // Assegna il contenuto del codice
-                code.textContent = part.code.trim(); // Usa textContent per evitare l'inserimento di HTML
-    
-                pre.appendChild(code);
-    
-                // Crea il pulsante di copia
-                const copyButton = document.createElement('button');
-                copyButton.textContent = 'Copia';
-                copyButton.classList.add('copy-button');
-    
-                copyButton.addEventListener('click', () => {
-                    // Copia il codice negli appunti
-                    const codeText = part.code.trim();
-                    navigator.clipboard.writeText(codeText).then(() => {
-                        // Fornisci un feedback all'utente
-                        copyButton.textContent = 'Copiato!';
-                        setTimeout(() => {
-                            copyButton.textContent = 'Copia';
-                        }, 2000);
-                    }).catch(err => {
-                        console.error('Errore nel copiare il codice:', err);
-                    });
+      
+        if (role === 'assistant') {
+          // Applica la formattazione solo ai messaggi dell'assistente
+          // Suddividi il contenuto in parti
+          const messageParts = parseMessageContent(content);
+          messageParts.forEach(part => {
+            if (part.type === 'code') {
+              const pre = document.createElement('pre');
+              const code = document.createElement('code');
+              code.classList.add(part.language || 'plaintext');
+              code.textContent = part.code.trim();
+              pre.appendChild(code);
+      
+              // Crea il pulsante di copia
+              const copyButton = document.createElement('button');
+              copyButton.textContent = 'Copia';
+              copyButton.classList.add('copy-button');
+              copyButton.addEventListener('click', () => {
+                const codeText = part.code.trim();
+                navigator.clipboard.writeText(codeText).then(() => {
+                  copyButton.textContent = 'Copiato!';
+                  setTimeout(() => {
+                    copyButton.textContent = 'Copia';
+                  }, 2000);
+                }).catch(err => {
+                  console.error('Errore nel copiare il codice:', err);
                 });
-    
-                pre.appendChild(copyButton);
-                contentDiv.appendChild(pre);
-    
-                // Inizializza Highlight.js sul blocco di codice
-                hljs.highlightElement(code);
-                // Inizializza i numeri di riga
-                hljs.lineNumbersBlock(code);
+              });
+              pre.appendChild(copyButton);
+              contentDiv.appendChild(pre);
+      
+              // Inizializza Highlight.js sul blocco di codice
+              hljs.highlightElement(code);
+              // Inizializza i numeri di riga
+              hljs.lineNumbersBlock(code);
             } else if (part.type === 'separator') {
-                const separatorDiv = document.createElement('div');
-                separatorDiv.classList.add('separator');
-                contentDiv.appendChild(separatorDiv);
+              const separatorDiv = document.createElement('div');
+              separatorDiv.classList.add('separator');
+              contentDiv.appendChild(separatorDiv);
             } else if (part.type === 'title') {
-                const titleElement = document.createElement('div');
-                titleElement.classList.add('message-title', `title-level-${part.level}`);
-                titleElement.innerHTML = formatBoldText(part.text);
-                contentDiv.appendChild(titleElement);
+              const titleElement = document.createElement('div');
+              titleElement.classList.add('message-title', `title-level-${part.level}`);
+              titleElement.innerHTML = formatBoldText(part.text);
+              contentDiv.appendChild(titleElement);
             } else {
-                const textParagraph = document.createElement('p');
-                textParagraph.innerHTML = formatBoldText(part.text.trim());
-                contentDiv.appendChild(textParagraph);
+              const textParagraph = document.createElement('p');
+              textParagraph.innerHTML = formatBoldText(part.text.trim());
+              contentDiv.appendChild(textParagraph);
             }
-        });
-    
+          });
+        } else {
+          // Per i messaggi dell'utente, mostra il testo senza formattazione
+          const textParagraph = document.createElement('p');
+          textParagraph.textContent = content.trim();
+          contentDiv.appendChild(textParagraph);
+        }
+      
         messageDiv.appendChild(contentDiv);
         chatWindow.appendChild(messageDiv);
-    
+      
         // Scrolla la chat per mostrare il nuovo messaggio
         messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+      }
 
     // Funzione per verificare se il messaggio contiene un blocco di codice
     function isCodeBlock(text) {
