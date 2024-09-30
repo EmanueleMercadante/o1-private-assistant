@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
         // Suddividi il contenuto in parti
         messageParts=content
-        if(role==assistant){
+        if(role=="assistant"){
             messageParts = parseMessageContent(content);
         }
         messageParts.forEach(part => {
