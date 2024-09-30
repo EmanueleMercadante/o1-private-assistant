@@ -129,12 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
         contentDiv.classList.add('content');
     
         // Suddividi il contenuto in parti
-        messageParts=content
-        if(role=="assistant"){
-            messageParts = parseMessageContent(content);
-        }
+        const messageParts = parseMessageContent(content);
+    
         messageParts.forEach(part => {
-            if (part.type === 'code') {
+            if (part.type === 'code' && role === 'assistant') {
                 const pre = document.createElement('pre');
                 const code = document.createElement('code');
                 code.classList.add(part.language || 'plaintext');
