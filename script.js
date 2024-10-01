@@ -1,3 +1,5 @@
+import DOMPurify from 'dompurify';
+
 document.addEventListener('DOMContentLoaded', () => {
     const chatWindow = document.getElementById('chat-window');
     const sendButton = document.getElementById('send-button');

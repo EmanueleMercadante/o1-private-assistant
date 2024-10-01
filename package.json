@@ -12,7 +12,8 @@
     "dependencies": {
       "openai": "^3.2.1",
       "pg": "^8.10.0",
-      "highlight.js": "^11.7.0"
+      "highlight.js": "^11.7.0",
+      "dompurify": "^2.4.0"
     },
     "devDependencies": {
       "nodemon": "^2.0.22"
