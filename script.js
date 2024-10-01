@@ -7,6 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentConversationId = null;
 
+    let selectedModel = 'o1-mini'; // Imposta un modello predefinito
+
+    const modelSelect = document.getElementById('model-select');
+
+    // Aggiorna il modello selezionato quando l'utente cambia la selezione
+    modelSelect.addEventListener('change', () => {
+        selectedModel = modelSelect.value;
+    });
+
     // Funzione per caricare le conversazioni esistenti
     function loadConversations() {
         fetch('/api/conversations')
@@ -166,16 +175,18 @@ document.addEventListener('DOMContentLoaded', () => {
               separatorDiv.classList.add('separator');
               contentDiv.appendChild(separatorDiv);
             } else if (part.type === 'title') {
-              const titleElement = document.createElement('div');
-              titleElement.classList.add('message-title', `title-level-${part.level}`);
-              titleElement.innerHTML = formatBoldText(part.text);
-              contentDiv.appendChild(titleElement);
+                const titleElement = document.createElement('div');
+                titleElement.classList.add('message-title', `title-level-${part.level}`);
+                // Usa DOMPurify per sanitizzare l'HTML
+                titleElement.innerHTML = DOMPurify.sanitize(formatBoldText(part.text));
+                contentDiv.appendChild(titleElement);
             } else {
-              const textParagraph = document.createElement('p');
-              textParagraph.innerHTML = formatBoldText(part.text.trim());
-              contentDiv.appendChild(textParagraph);
+                const textParagraph = document.createElement('p');
+                // Usa DOMPurify per sanitizzare l'HTML
+                textParagraph.innerHTML = DOMPurify.sanitize(formatBoldText(part.text.trim()));
+                contentDiv.appendChild(textParagraph);
             }
-          });
+        });
         } else {
           // Per i messaggi dell'utente, mostra il testo senza formattazione
           const textParagraph = document.createElement('p');
@@ -241,7 +252,7 @@ function hideLoading() {
         displayMessage('user', message);
         userInput.value = '';
 
-        showLoading(); // Mostra l'animazione di caricamento dopo aver visualizzato il messaggio dell'utente
+        showLoading(); // Mostra l'animazione di caricamento
 
         fetch('/api/chat', {
             method: 'POST',
@@ -250,7 +261,8 @@ function hideLoading() {
             },
             body: JSON.stringify({
                 conversation_id: currentConversationId,
-                message: message
+                message: message,
+                model: selectedModel // Includi il modello selezionato nella richiesta
             })
         })
         .then(response => response.json())

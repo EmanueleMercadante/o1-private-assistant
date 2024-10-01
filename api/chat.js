@@ -18,7 +18,8 @@ client.connect();
 
 module.exports = async (req, res) => {
   if (req.method === 'POST') {
-    const { conversation_id, message } = req.body;
+    const { conversation_id, message, model } = req.body;
+
 
     // Gestisci il caso in cui conversation_id non sia fornito (ad esempio, nuova conversazione)
     let conversationId = conversation_id;
@@ -54,8 +55,8 @@ module.exports = async (req, res) => {
     // Genera la risposta utilizzando l'API di OpenAI
     try {
       const completion = await openai.createChatCompletion({
-        model: 'o1-mini', // Sostituisci con il modello che preferisci
-        messages: messages,
+          model: model || 'o1-mini', // Usa il modello ricevuto o un predefinito
+          messages: messages,
       });
 
       const assistantMessage = completion.data.choices[0].message.content;

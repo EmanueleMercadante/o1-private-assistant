@@ -11,6 +11,16 @@
     <div class="chat-container">
         <header>
             <h1>o1-preview | <span>assistenti custom</span></h1>
+            <!-- Aggiungi il selettore del modello -->
+            <div class="model-selector">
+                <label for="model-select">Modello:</label>
+                <select id="model-select">
+                    <option value="o1-mini">o1-mini</option>
+                    <option value="o1-preview">o1-preview</option>
+                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                    <!-- Aggiungi altri modelli se necessario -->
+                </select>
+            </div>
         </header>
         <div id="conversation-list">
             <h2>Conversazioni</h2>
@@ -41,6 +51,8 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/sql.min.js"></script>
 
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js" integrity="sha512-zLiY52rVEhYV+w8CWOouBwSXtnoV0VWH4wqZQtaidavQDljGNcoRk/KOFpBpUclFkylylI7I0xHwFPtmKbPBTQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
     <!-- Il tuo script principale -->
