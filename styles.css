@@ -605,3 +605,16 @@ pre ::-webkit-scrollbar {
     color: black;
     border-bottom-left-radius: 0;
 }
+
+
+
+
+
+
+
+
+/* Stile per il messaggio evidenziato */
+.highlighted-message {
+    outline: 2px solid #ff9800;
+    background-color: #fff3e0;
+}

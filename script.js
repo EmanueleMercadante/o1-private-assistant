@@ -143,9 +143,12 @@ function loadConversations() {
 
 
     // Funzione per visualizzare un messaggio
-    function displayMessage(role, content) {
+    function displayMessage(role, content, highlight = false) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', role);
+        if (highlight) {
+            messageDiv.classList.add('highlighted-message');
+        }
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('content');
       
@@ -439,38 +442,19 @@ function hideLoading() {
 
 
     // Funzione per mostrare l'anteprima della conversazione
+// Funzione per mostrare l'anteprima della conversazione
 function showPreview(conversationId) {
-    // Fetch the conversation data
+    // Recupera i dati della conversazione
     fetch(`/api/conversations?id=${conversationId}`)
         .then(response => response.json())
         .then(data => {
             const previewMessagesDiv = document.getElementById('preview-messages');
-            previewMessagesDiv.innerHTML = ''; // Pulisci il contenuto precedente
+            previewMessagesDiv.innerHTML = ''; // Pulizia del contenuto precedente
 
-            // Crea messaggi abbreviati, ad esempio, mostra i primi e gli ultimi 2 messaggi
             const messages = data.messages;
-            let previewMessages = [];
 
-            if (messages.length <= 4) {
-                previewMessages = messages;
-            } else {
-                previewMessages = [
-                    ...messages.slice(0, 2),
-                    { role: '...', content: '...' },
-                    ...messages.slice(-2)
-                ];
-            }
-
-            // Visualizza i messaggi
-            previewMessages.forEach((msg, index) => {
-                if (msg.role === '...') {
-                    const separator = document.createElement('div');
-                    separator.classList.add('separator');
-                    separator.textContent = '...';
-                    previewMessagesDiv.appendChild(separator);
-                    return;
-                }
-
+            // Visualizza tutti i messaggi
+            messages.forEach((msg, index) => {
                 const messageDiv = document.createElement('div');
                 messageDiv.classList.add('message', msg.role);
 
@@ -479,9 +463,9 @@ function showPreview(conversationId) {
 
                 let text = msg.content;
 
-                // Tronca i messaggi lunghi
-                if (text.length > 100) {
-                    text = text.substring(0, 100) + '...';
+                // Tronca i messaggi molto lunghi nell'anteprima (opzionale)
+                if (text.length > 200) {
+                    text = text.substring(0, 200) + '...';
                 }
 
                 contentDiv.textContent = text;
@@ -500,7 +484,7 @@ function showPreview(conversationId) {
             const modal = document.getElementById('preview-modal');
             modal.style.display = 'block';
         })
-        .catch(error => console.error('Errore nel fetching della conversazione:', error));
+        .catch(error => console.error('Errore nel recupero della conversazione:', error));
 }
 
 
@@ -547,26 +531,34 @@ function closePreview() {
 
 
 // Funzione per navigare a un messaggio specifico nella conversazione
-function navigateToMessage(conversationId, previewIndex) {
+function navigateToMessage(conversationId, messageIndex) {
+    // Imposta la conversazione corrente
+    currentConversationId = conversationId;
+    updateActiveConversation(conversationId);
+
     // Recupera la conversazione completa
     fetch(`/api/conversations?id=${conversationId}`)
         .then(response => response.json())
         .then(data => {
             chatWindow.innerHTML = '';
             data.messages.forEach((msg, idx) => {
-                displayMessage(msg.role, msg.content);
+                displayMessage(msg.role, msg.content, idx === messageIndex); // Passa true se è il messaggio selezionato
             });
-
-            // Calcola l'indice reale del messaggio
-            const realIndex = previewIndex < 2 ? previewIndex : data.messages.length - 2 + (previewIndex - 3);
 
             // Scorri al messaggio specifico
             const messagesInChat = chatWindow.getElementsByClassName('message');
-            if (realIndex < messagesInChat.length) {
-                messagesInChat[realIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (messageIndex < messagesInChat.length) {
+                const targetMessage = messagesInChat[messageIndex];
+                targetMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Evidenzia temporaneamente il messaggio
+                targetMessage.classList.add('highlighted-message');
+                setTimeout(() => {
+                    targetMessage.classList.remove('highlighted-message');
+                }, 2000); // Rimuovi l'evidenziazione dopo 2 secondi
             }
         })
-        .catch(error => console.error('Errore nel navigare alla conversazione:', error));
+        .catch(error => console.error('Errore nella navigazione alla conversazione:', error));
 }
 
 
