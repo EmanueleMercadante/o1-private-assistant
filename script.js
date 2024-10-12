@@ -17,44 +17,57 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Funzione per caricare le conversazioni esistenti
-    function loadConversations() {
-        fetch('/api/conversations')
-            .then(response => response.json())
-            .then(data => {
-                conversationsList.innerHTML = '';
-                data.forEach(conv => {
-                    const li = document.createElement('li');
-                    li.textContent = conv.conversation_name;
-                    li.dataset.id = conv.conversation_id;
-                    li.classList.add('conversation-item');
+function loadConversations() {
+    fetch('/api/conversations')
+        .then(response => response.json())
+        .then(data => {
+            conversationsList.innerHTML = '';
+            data.forEach(conv => {
+                const li = document.createElement('li');
+                li.textContent = conv.conversation_name;
+                li.dataset.id = conv.conversation_id;
+                li.classList.add('conversation-item');
 
-                    // Aggiungi listener per selezionare la conversazione
-                    li.addEventListener('click', () => {
-                        currentConversationId = conv.conversation_id;
-                        loadConversation(conv.conversation_id);
-                        updateActiveConversation(conv.conversation_id);
-                    });
-
-                    // Creazione del pulsante di eliminazione
-                    const deleteButton = document.createElement('button');
-                    deleteButton.textContent = '✕';
-                    deleteButton.classList.add('delete-button');
-
-                    // Prevenire la propagazione del click sul pulsante di eliminazione
-                    deleteButton.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        deleteConversation(conv.conversation_id, conv.conversation_name);
-                    });
-
-                    li.appendChild(deleteButton);
-                    conversationsList.appendChild(li);
+                // Aggiungi listener per selezionare la conversazione
+                li.addEventListener('click', () => {
+                    currentConversationId = conv.conversation_id;
+                    loadConversation(conv.conversation_id);
+                    updateActiveConversation(conv.conversation_id);
                 });
 
-                // Aggiorna l'evidenziazione della conversazione attiva
-                updateActiveConversation(currentConversationId);
-            })
-            .catch(error => console.error('Errore nel caricamento delle conversazioni:', error));
-    }
+                // Creazione del pulsante di eliminazione
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '\u2715'; // Simbolo 'x'
+                deleteButton.classList.add('delete-button');
+
+                // Prevenire la propagazione del click sul pulsante di eliminazione
+                deleteButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteConversation(conv.conversation_id, conv.conversation_name);
+                });
+
+                // Creazione del pulsante di anteprima
+                const previewButton = document.createElement('button');
+                previewButton.innerHTML = '🔍'; // Simbolo dell'occhio per l'anteprima
+                previewButton.classList.add('preview-button');
+
+                // Aggiungi listener per il pulsante di anteprima
+                previewButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showPreview(conv.conversation_id);
+                });
+
+                // Posiziona i pulsanti all'interno dell'elemento della lista
+                li.appendChild(deleteButton);
+                li.appendChild(previewButton);
+                conversationsList.appendChild(li);
+            });
+
+            // Aggiorna l'evidenziazione della conversazione attiva
+            updateActiveConversation(currentConversationId);
+        })
+        .catch(error => console.error('Errore nel caricamento delle conversazioni:', error));
+}
 
     // Funzione per aggiornare l'evidenziazione della conversazione attiva
     function updateActiveConversation(conversationId) {
@@ -397,7 +410,165 @@ function hideLoading() {
     }
 
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Funzione per mostrare l'anteprima della conversazione
+function showPreview(conversationId) {
+    // Fetch the conversation data
+    fetch(`/api/conversations?id=${conversationId}`)
+        .then(response => response.json())
+        .then(data => {
+            const previewMessagesDiv = document.getElementById('preview-messages');
+            previewMessagesDiv.innerHTML = ''; // Pulisci il contenuto precedente
+
+            // Crea messaggi abbreviati, ad esempio, mostra i primi e gli ultimi 2 messaggi
+            const messages = data.messages;
+            let previewMessages = [];
+
+            if (messages.length <= 4) {
+                previewMessages = messages;
+            } else {
+                previewMessages = [
+                    ...messages.slice(0, 2),
+                    { role: '...', content: '...' },
+                    ...messages.slice(-2)
+                ];
+            }
+
+            // Visualizza i messaggi
+            previewMessages.forEach((msg, index) => {
+                if (msg.role === '...') {
+                    const separator = document.createElement('div');
+                    separator.classList.add('separator');
+                    separator.textContent = '...';
+                    previewMessagesDiv.appendChild(separator);
+                    return;
+                }
+
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', msg.role);
+
+                const contentDiv = document.createElement('div');
+                contentDiv.classList.add('content');
+
+                let text = msg.content;
+
+                // Tronca i messaggi lunghi
+                if (text.length > 100) {
+                    text = text.substring(0, 100) + '...';
+                }
+
+                contentDiv.textContent = text;
+
+                messageDiv.appendChild(contentDiv);
+                previewMessagesDiv.appendChild(messageDiv);
+
+                // Aggiungi l'evento click per navigare al messaggio
+                messageDiv.addEventListener('click', () => {
+                    navigateToMessage(conversationId, index);
+                    closePreview();
+                });
+            });
+
+            // Mostra il modal
+            const modal = document.getElementById('preview-modal');
+            modal.style.display = 'block';
+        })
+        .catch(error => console.error('Errore nel fetching della conversazione:', error));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+// Chiude il modal quando l'utente clicca sul pulsante di chiusura
+const modal = document.getElementById('preview-modal');
+const closeButton = modal.querySelector('.close-button');
+closeButton.addEventListener('click', closePreview);
+
+// Chiude il modal quando l'utente clicca fuori dal contenuto del modal
+window.addEventListener('click', (event) => {
+    if (event.target === modal) {
+        closePreview();
+    }
 });
 
+// Funzione per chiudere il modal
+function closePreview() {
+    const modal = document.getElementById('preview-modal');
+    modal.style.display = 'none';
+}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Funzione per navigare a un messaggio specifico nella conversazione
+function navigateToMessage(conversationId, previewIndex) {
+    // Recupera la conversazione completa
+    fetch(`/api/conversations?id=${conversationId}`)
+        .then(response => response.json())
+        .then(data => {
+            chatWindow.innerHTML = '';
+            data.messages.forEach((msg, idx) => {
+                displayMessage(msg.role, msg.content);
+            });
+
+            // Calcola l'indice reale del messaggio
+            const realIndex = previewIndex < 2 ? previewIndex : data.messages.length - 2 + (previewIndex - 3);
+
+            // Scorri al messaggio specifico
+            const messagesInChat = chatWindow.getElementsByClassName('message');
+            if (realIndex < messagesInChat.length) {
+                messagesInChat[realIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        })
+        .catch(error => console.error('Errore nel navigare alla conversazione:', error));
+}
+
+
+    
+});
