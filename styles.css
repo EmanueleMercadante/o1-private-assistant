@@ -63,27 +63,42 @@ header h1 {
 #conversation-list li:hover, #conversation-list li.active {
     background-color: #3A3B3C;
 }
-
 #button-wrapper {
     position: fixed;
     left: 0;
     bottom: 0;
     width: 20%;
     padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #new-conversation {
-    left: 0;
-    bottom: 0;
     width: 100%;
-    padding: 10px;
-    background-color: #4CAF50;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #4CAF50, #81C784);
     border: none;
     color: white;
     font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
+#new-conversation:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+#new-conversation:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
 
 #chat-section {
     width: 80%;
