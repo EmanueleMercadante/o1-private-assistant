@@ -64,8 +64,15 @@ header h1 {
     background-color: #3A3B3C;
 }
 
+#button-wrapper {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 20%;
+    padding: 20px;
+}
+
 #new-conversation {
-    position: absolute;
     left: 0;
     bottom: 0;
     width: 100%;
