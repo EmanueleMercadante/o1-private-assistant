@@ -40,6 +40,7 @@ header h1 {
     overflow-x: hidden;
     padding: 20px 20px 20px; /* Aggiustamento padding per spazio sotto l'header */
     margin-top: 8vh;
+    padding-bottom: 80px;
 }
 
 
@@ -77,7 +78,7 @@ header h1 {
 #new-conversation {
     width: 100%;
     padding: 12px 20px;
-    background: linear-gradient(135deg, #4CAF50, #81C784);
+    background: linear-gradient(135deg, #003e03, #81C784);
     border: none;
     color: white;
     font-size: 16px;
@@ -90,7 +91,7 @@ header h1 {
 }
 
 #new-conversation:hover {
-    transform: translateY(-2px);
+    transform: translateY(-4px);
     box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
 }
 
