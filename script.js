@@ -12,11 +12,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const modelSelect = document.getElementById('model-select');
 
     if (modelSelect) selectedModel = modelSelect.value;
-    
+
     // Aggiorna il modello selezionato quando l'utente cambia la selezione
     modelSelect.addEventListener('change', () => {
         selectedModel = modelSelect.value;
     });
+
+
+    // <--- Aggiunta per disattivare formattazione
+    let disableFormatting = false;
+    const disableFormattingCheckbox = document.getElementById('disable-formatting');
+    if (disableFormattingCheckbox) {
+      disableFormattingCheckbox.addEventListener('change', (e) => {
+        disableFormatting = e.target.checked;
+      });
+    }
 
     // Funzione per caricare le conversazioni esistenti
 function loadConversations() {
@@ -153,8 +163,13 @@ function loadConversations() {
         }
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('content');
-      
-        if (role === 'assistant') {
+
+        if (disableFormatting && role === 'assistant') {
+            const textParagraph = document.createElement('p');
+            textParagraph.textContent = content.trim(); // testo “raw”
+            contentDiv.appendChild(textParagraph);
+
+        } else if (role === 'assistant') {
           // Applica la formattazione solo ai messaggi dell'assistente
           // Suddividi il contenuto in parti
           const messageParts = parseMessageContent(content);
