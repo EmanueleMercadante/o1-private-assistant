@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const modelSelect = document.getElementById('model-select');
 
+    if (modelSelect) selectedModel = modelSelect.value;
+    
     // Aggiorna il modello selezionato quando l'utente cambia la selezione
     modelSelect.addEventListener('change', () => {
         selectedModel = modelSelect.value;
