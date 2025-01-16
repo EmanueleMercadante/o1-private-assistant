@@ -6,33 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const conversationsList = document.getElementById('conversations');
     const newConversationButton = document.getElementById('new-conversation');
     const modelSelect = document.getElementById('model-select');
-    let pendingImages = [];
-
-    // Riferimento all’input HTML per le immagini
-    const imageInput = document.getElementById('image-input');
-
-    // Event listener per convertire i file selezionati in base64
-    if (imageInput) {
-    imageInput.addEventListener('change', async (event) => {
-        const files = Array.from(event.target.files);
-        for (const file of files) {
-        const base64 = await readFileAsBase64(file);
-        // Rimuove il prefisso data:image/...;base64, per pulire la stringa
-        const pureBase64 = base64.replace(/^data:image\/[^;]+;base64,/, '');
-        pendingImages.push(pureBase64);
-        }
-    });
-    }
-
-    // Funzione di utilità per leggere un file come base64
-    function readFileAsBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-    }
 
     // --- Gestione stato della formattazione ---
     // Di default la formattazione è ATTIVA (checkbox non spuntato).
@@ -197,44 +170,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('content');
 
-        // Se il contenuto è un array => può contenere testo e/o immagini
-        if (Array.isArray(content)) {
-            content.forEach(item => {
-                if (item.type === 'text') {
-                    // Se assistant + formattazione disattivata => raw
-                    if (role === 'assistant' && disableFormatting) {
-                        const textParagraph = document.createElement('p');
-                        textParagraph.textContent = item.text.trim();
-                        contentDiv.appendChild(textParagraph);
-                    } else if (role === 'assistant') {
-                        // Altrimenti formattiamo (parse code, etc.)
-                        attachFormattedText(item.text, contentDiv);
-                    } else {
-                        // Utente o altro ruolo => testo raw
-                        const textParagraph = document.createElement('p');
-                        textParagraph.textContent = item.text.trim();
-                        contentDiv.appendChild(textParagraph);
-                    }
-                }
-                else if (item.type === 'image_url' && item.image_url) {
-                    const img = document.createElement('img');
-                    img.src = item.image_url.url;
-                    img.alt = 'Immagine';
-                    img.style.maxWidth = '300px';
-                    img.style.display = 'block';
-                    img.style.margin = '10px 0';
-                    contentDiv.appendChild(img);
-                }
-            });
-        }
-        else {
-            // Altrimenti è una stringa classica (gestione preesistente)
-            if (role === 'assistant' && disableFormatting) {
-                const p = document.createElement('p');
-                p.textContent = content;
-                contentDiv.appendChild(p);
-            } else if (role === 'assistant') {
-                // Formattazione classica
+        if (role === 'assistant') {
+            // Se formattazione disattivata => mostra testo raw
+            if (disableFormatting) {
+                const textParagraph = document.createElement('p');
+                textParagraph.textContent = content.trim();
+                contentDiv.appendChild(textParagraph);
+            } 
+            else {
+                // Formattazione classica (code blocks, parseMessageContent, ecc.)
                 const messageParts = parseMessageContent(content);
                 messageParts.forEach(part => {
                     if (part.type === 'code') {
@@ -244,11 +188,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         code.textContent = part.code.trim();
                         pre.appendChild(code);
 
+                        // Pulsante di copia
                         const copyButton = document.createElement('button');
                         copyButton.textContent = 'Copia';
                         copyButton.classList.add('copy-button');
                         copyButton.addEventListener('click', () => {
-                            navigator.clipboard.writeText(part.code.trim()).then(() => {
+                            const codeText = part.code.trim();
+                            navigator.clipboard.writeText(codeText).then(() => {
                                 copyButton.textContent = 'Copiato!';
                                 setTimeout(() => {
                                     copyButton.textContent = 'Copia';
@@ -260,79 +206,42 @@ document.addEventListener('DOMContentLoaded', () => {
                         pre.appendChild(copyButton);
                         contentDiv.appendChild(pre);
 
+                        // Evidenzia sintassi
                         hljs.highlightElement(code);
                         hljs.lineNumbersBlock(code);
-                    } else if (part.type === 'separator') {
+                    }
+                    else if (part.type === 'separator') {
                         const separatorDiv = document.createElement('div');
                         separatorDiv.classList.add('separator');
                         contentDiv.appendChild(separatorDiv);
-                    } else if (part.type === 'title') {
+                    }
+                    else if (part.type === 'title') {
                         const titleElement = document.createElement('div');
                         titleElement.classList.add('message-title', `title-level-${part.level}`);
                         titleElement.innerHTML = DOMPurify.sanitize(formatBoldText(part.text));
                         contentDiv.appendChild(titleElement);
-                    } else {
+                    }
+                    else {
+                        // Testo normale
                         const textParagraph = document.createElement('p');
                         textParagraph.innerHTML = DOMPurify.sanitize(formatBoldText(part.text.trim()));
                         contentDiv.appendChild(textParagraph);
                     }
                 });
-            } else {
-                const p = document.createElement('p');
-                p.textContent = content;
-                contentDiv.appendChild(p);
             }
+        } 
+        else {
+            // Messaggi dell’utente (o altri ruoli) => testo raw
+            const textParagraph = document.createElement('p');
+            textParagraph.textContent = content.trim();
+            contentDiv.appendChild(textParagraph);
         }
 
         messageDiv.appendChild(contentDiv);
         chatWindow.appendChild(messageDiv);
+
+        // Scrolla la chat per mostrare il nuovo messaggio
         messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-
-    function attachFormattedText(text, container) {
-        const parts = parseMessageContent(text);
-        parts.forEach(part => {
-            if (part.type === 'code') {
-                const pre = document.createElement('pre');
-                const code = document.createElement('code');
-                code.classList.add(part.language || 'plaintext');
-                code.textContent = part.code.trim();
-                pre.appendChild(code);
-
-                const copyButton = document.createElement('button');
-                copyButton.textContent = 'Copia';
-                copyButton.classList.add('copy-button');
-                copyButton.addEventListener('click', () => {
-                    navigator.clipboard.writeText(part.code.trim()).then(() => {
-                        copyButton.textContent = 'Copiato!';
-                        setTimeout(() => {
-                            copyButton.textContent = 'Copia';
-                        }, 2000);
-                    }).catch(err => {
-                        console.error('Errore nel copiare il codice:', err);
-                    });
-                });
-                pre.appendChild(copyButton);
-                container.appendChild(pre);
-
-                hljs.highlightElement(code);
-                hljs.lineNumbersBlock(code);
-            } else if (part.type === 'separator') {
-                const separatorDiv = document.createElement('div');
-                separatorDiv.classList.add('separator');
-                container.appendChild(separatorDiv);
-            } else if (part.type === 'title') {
-                const titleElement = document.createElement('div');
-                titleElement.classList.add('message-title', `title-level-${part.level}`);
-                titleElement.innerHTML = DOMPurify.sanitize(formatBoldText(part.text));
-                container.appendChild(titleElement);
-            } else {
-                const textParagraph = document.createElement('p');
-                textParagraph.innerHTML = DOMPurify.sanitize(formatBoldText(part.text.trim()));
-                container.appendChild(textParagraph);
-            }
-        });
     }
 
     /**
@@ -460,61 +369,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inviare il messaggio
     sendButton.addEventListener('click', () => {
-        // Testo digitato dall’utente
-        const messageText = userInput.value.trim();
-
-        // Se ci sono immagini caricate, costruiamo un array di contenuti
-        let content;
-        if (pendingImages.length > 0) {
-            // Creiamo un array: 
-            // - primo elemento: { type: 'text', text: ... } se esiste testo
-            // - poi, un elemento { type: 'image_url', image_url: { url: base64... } } per ogni immagine
-            const items = [];
-
-            if (messageText) {
-                items.push({ type: 'text', text: messageText });
-            }
-            for (const base64Image of pendingImages) {
-                items.push({
-                    type: 'image_url',
-                    image_url: {
-                        url: `data:image/jpeg;base64,${base64Image}`,
-                        detail: 'high'
-                    }
-                });
-            }
-            content = items;
-            // Svuotiamo la coda delle immagini dopo averla usata
-            pendingImages = [];
-        } else {
-            // Nessuna immagine, mandiamo direttamente il testo come stringa
-            content = messageText;
-        }
-
-        // Se non c'è testo e non ci sono immagini, non inviamo nulla
-        if (!messageText && typeof content === 'string' && content === '') {
-            return;
-        }
-
-        // Visualizza subito il messaggio dell'utente (in locale)
-        displayMessage('user', content);
+        const message = userInput.value.trim();
+        if (message === '') return;
+        // Visualizza subito il messaggio dell'utente
+        displayMessage('user', message);
         userInput.value = '';
 
-        // Reset dell’input file (per evitare che rimanga il riferimento ai file caricati)
-        if (imageInput) {
-            imageInput.value = '';
-        }
-
-        // Avvia il loading
         showLoading();
 
-        // Invia i dati al backend
         fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 conversation_id: currentConversationId,
-                message: content,
+                message: message,
                 model: selectedModel
             })
         })
@@ -522,14 +390,44 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
             currentConversationId = data.conversation_id;
             hideLoading();
-            // Ricarichiamo la conversazione dal server in modo da visualizzare la risposta
+            // Aggiunge i due messaggi in currentMessages
+            // (user e assistant) – in realtà user già c'è, ma rifacciamo un loadConversation
+            // per restare in sync col DB.
             loadConversation(currentConversationId);
+
+            // Oppure, per aggiungerlo manualmente e poi renderMessages():
+            // currentMessages.push({ role: 'user', content: message });
+            // currentMessages.push({ role: 'assistant', content: data.response });
+            // renderMessages();
         })
         .catch(error => {
             console.error('Errore nella comunicazione con l\'API:', error);
             hideLoading();
         });
     });
+
+    // Nuova conversazione
+    newConversationButton.addEventListener('click', () => {
+        const conversationName = prompt('Inserisci un nome per la nuova conversazione:');
+        if (conversationName) {
+            fetch('/api/conversations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ conversation_name: conversationName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                currentConversationId = data.conversation_id;
+                currentMessages = [];
+                chatWindow.innerHTML = '';
+                loadConversations();
+            })
+            .catch(error => console.error('Errore nella creazione della conversazione:', error));
+        }
+    });
+
+    // Carica le conversazioni all'avvio
+    loadConversations();
 
 
     // =========================

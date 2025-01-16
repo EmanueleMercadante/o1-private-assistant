@@ -27,6 +27,10 @@ header h1 {
     margin-bottom: auto;
 }
 
+/* header span{
+    color: #57ff5c;
+} */
+
 #conversation-list {
     box-sizing: border-box;
     width: 20%;
@@ -34,10 +38,11 @@ header h1 {
     color: #e4e6eb;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 20px;
+    padding: 20px 20px 20px; /* Aggiustamento padding per spazio sotto l'header */
     margin-top: 8vh;
     padding-bottom: 80px;
 }
+
 
 #conversation-list h2 {
     margin-top: 0;
@@ -54,14 +59,11 @@ header h1 {
     padding: 10px;
     cursor: pointer;
     border-bottom: 1px solid #3A3B3C;
-    position: relative;
-    padding-right: 40px; /* spazio per i pulsanti */
 }
 
 #conversation-list li:hover, #conversation-list li.active {
     background-color: #3A3B3C;
 }
-
 #button-wrapper {
     position: fixed;
     left: 0;
@@ -98,13 +100,15 @@ header h1 {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
+
 #chat-section {
     width: 80%;
     display: flex;
     flex-direction: column;
-    padding-top: 15px;
-    padding-left: 30px;
-    padding-right: 30px;
+    padding-top: 15px; /* Aggiustamento padding per spazio sotto l'header */
+    padding-left: 30px; /* Aggiustamento padding per spazio sotto l'header */
+    padding-right: 30px; /* Aggiustamento padding per spazio sotto l'header */
+    border-radius: 10px;
     margin-top: 8vh;
     position: relative;
 }
@@ -138,8 +142,6 @@ header h1 {
     word-wrap: break-word;
     font-size: 16px;
     line-height: 1.4;
-    background-color: #E5E5EA;
-    color: black;
 }
 
 .message.user .content {
@@ -148,34 +150,38 @@ header h1 {
     border-bottom-right-radius: 0;
 }
 
+.message.user .content p {
+    margin: 0;
+}
+
 .message.assistant .content {
     background-color: #E5E5EA;
     color: black;
     border-bottom-left-radius: 0;
 }
 
-.message .content p {
+.message.assistant .content p {
     margin: 0;
+}
+
+.message .content p {
     white-space: pre-wrap;
 }
 
 .input-area {
-    height: auto;
+    height: 9.5vh;
     display: flex;
-    flex-direction: column;
     padding: 6px;
     background-color: #f0f2f5;
     border-top: 1px solid #ccc;
 }
 
-#image-input {
-    margin-top: 4px;
-}
-
 #user-input {
-    margin-top: 4px;
+    height: 7.5vh;
     flex-grow: 1;
-    padding: 8px;
+    padding-top: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
     border: 1px solid #ccc;
     border-radius: 18px;
     font-size: 16px;
@@ -183,7 +189,7 @@ header h1 {
 }
 
 #send-button {
-    margin-top: 4px;
+    margin-left: 10px;
     padding: 10px 20px;
     background-color: #42b72a;
     border: none;
@@ -197,9 +203,10 @@ header h1 {
     background-color: #36a420;
 }
 
+/* Stili per il codice evidenziato */
 .content pre {
     position: relative;
-    background-color: #1e1e1e;
+    background-color: #1e1e1e; /* Tonalità leggermente più chiara del nero puro */
     color: #e4e6eb;
     padding: 10px;
     border-radius: 8px;
@@ -207,22 +214,24 @@ header h1 {
     margin: 10px 0;
 }
 
+/* Rimuovi lo sfondo predefinito del codice */
 .content pre code {
     background: none;
     padding: 0;
 }
 
+/* Stili per i numeri di riga */
 .hljs-ln-numbers {
     text-align: right;
     color: #888;
-    user-select: none;
-    pointer-events: none;
+    user-select: none; /* Impedisce la selezione */
+    pointer-events: none; /* Impedisce l'interazione */
 }
 
-td.hljs-ln-line.hljs-ln-code {
+td.hljs-ln-line.hljs-ln-code{
     padding-left: 10px;
 }
-
+/* Pulsante di copia */
 .copy-button {
     position: absolute;
     top: 8px;
@@ -240,6 +249,7 @@ td.hljs-ln-line.hljs-ln-code {
     background-color: #45a049;
 }
 
+/* Aggiungere uno stile per gli scrollbar personalizzati (opzionale) */
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -257,8 +267,14 @@ td.hljs-ln-line.hljs-ln-code {
     background-color: #aaa;
 }
 
+
 pre ::-webkit-scrollbar {
     height: 5px;
+}
+
+.conversation-item {
+    position: relative;
+    padding-right: 25px; /* Spazio per il pulsante 'x' */
 }
 
 .conversation-item .delete-button {
@@ -278,9 +294,32 @@ pre ::-webkit-scrollbar {
     opacity: 1;
 }
 
+/* Evidenziazione della conversazione selezionata */
 .conversation-item.active {
     background-color: #3A3B3C;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 .loading-indicator {
     text-align: center;
@@ -292,6 +331,7 @@ pre ::-webkit-scrollbar {
     font-style: italic;
 }
 
+/* Animazione di caricamento */
 .loading-indicator::after {
     content: '';
     display: inline-block;
@@ -310,9 +350,219 @@ pre ::-webkit-scrollbar {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@media screen and (max-width: 768px) {
+    .chat-container {
+        flex-direction: column;
+    }
+
+    #conversation-list {
+        width: 100%;
+        margin-top: 0;
+        padding: 10px;
+    }
+
+    #chat-section {
+        width: 100%;
+        margin-top: 0;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .input-area {
+        height: auto;
+        flex-direction: column;
+    }
+
+    #user-input {
+        width: 100%;
+        height: auto;
+        min-height: 50px;
+        margin-bottom: 10px;
+    }
+
+    #send-button {
+        width: 100%;
+        padding: 12px;
+    }
+
+    .message .content {
+        max-width: 100%;
+    }
+}
+
+/* Media query per schermi con larghezza massima di 480px (smartphone) */
+@media screen and (max-width: 480px) {
+    header h1 {
+        font-size: 18px;
+    }
+
+    #send-button {
+        font-size: 16px;
+        padding: 10px;
+    }
+
+    .message .content {
+        font-size: 14px;
+    }
+
+    #new-conversation {
+        font-size: 14px;
+        padding: 8px;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+.highlighted-text {
+    font-weight: bold;
+    font-size: 1.1em; /* Aumenta la dimensione del testo del 10% */
+}
+
+
+
+
+.separator {
+    height: 1px;
+    background-color: #ccc;
+    margin: 10px 0;
+}
+
+
+
+
+.message-title {
+    margin: 10px 0;
+    font-weight: bold;
+    font-style: italic;
+}
+
+/* Titolo di livello 3 (###) - il più PICCOLO */
+.title-level-3 {
+    font-size: 1.18em; /* Aumenta la dimensione del 40% */
+}
+
+/* Titolo di livello 2 (##) */
+.title-level-2 {
+    font-size: 1.28em; /* Aumenta la dimensione del 30% */
+}
+
+/* Titolo di livello 1 (#) */
+.title-level-1 {
+    font-size: 1.38em; /* Aumenta la dimensione del 20% */
+}
+
+
+
+
+/* Stile per il testo in corsivo */
+.content em {
+    font-style: italic;
+}
+
+
+.inline-code {
+    font-family: monospace;
+    background-color: #f0f0f0;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.model-selector {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.model-selector label {
+    color: white;
+    margin-right: 5px;
+    font-size: 14px;
+}
+
+.model-selector select {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Stili per il Pulsante di Anteprima */
 .preview-button {
     position: absolute;
-    right: 25px;
+    right: 25px; /* Posiziona accanto al pulsante di eliminazione */
     top: 50%;
     transform: translateY(-50%);
     background: none;
@@ -327,24 +577,25 @@ pre ::-webkit-scrollbar {
     opacity: 1;
 }
 
+/* Modal Styles */
 .modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
+    display: none; /* Nascondi di default */
+    position: fixed; /* Rimani in posizione */
+    z-index: 1000; /* Sovrapponi al resto */
     left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
+    width: 100%; /* Larghezza completa */
+    height: 100%; /* Altezza completa */
+    overflow: auto; /* Abilita lo scroll se necessario */
+    background-color: rgba(0,0,0,0.4); /* Sfondo nero con opacità */
 }
 
 .modal-content {
     background-color: #fefefe;
-    margin: 10% auto;
+    margin: 10% auto; /* Centra verticalmente */
     padding: 20px;
     border: 1px solid #888;
-    width: 80%;
+    width: 80%; /* Larghezza del modal */
     max-height: 80%;
     overflow-y: auto;
     border-radius: 8px;
@@ -380,47 +631,15 @@ pre ::-webkit-scrollbar {
     border-bottom-left-radius: 0;
 }
 
+
+
+
+
+
+
+
+/* Stile per il messaggio evidenziato */
 .highlighted-message {
     outline: 2px solid #ff9800;
     background-color: #fff3e0;
-}
-
-.highlighted-text {
-    font-weight: bold;
-    font-size: 1.1em;
-}
-
-.separator {
-    height: 1px;
-    background-color: #ccc;
-    margin: 10px 0;
-}
-
-.message-title {
-    margin: 10px 0;
-    font-weight: bold;
-    font-style: italic;
-}
-
-.title-level-3 {
-    font-size: 1.18em;
-}
-
-.title-level-2 {
-    font-size: 1.28em;
-}
-
-.title-level-1 {
-    font-size: 1.38em;
-}
-
-.content em {
-    font-style: italic;
-}
-
-.inline-code {
-    font-family: monospace;
-    background-color: #f0f0f0;
-    padding: 2px 4px;
-    border-radius: 4px;
 }
