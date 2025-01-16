@@ -16,7 +16,22 @@ module.exports = async (req, res) => {
                 'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
                 [conversationId]
             );
-            res.status(200).json({ messages: messagesRes.rows });
+
+            // Tenta di parsare content come JSON
+            const messages = messagesRes.rows.map((row) => {
+                let parsed;
+                try {
+                  parsed = JSON.parse(row.content);
+                } catch(e) {
+                  parsed = row.content;
+                }
+                return {
+                  role: row.role,
+                  content: parsed
+                };
+            });
+
+            res.status(200).json({ messages });
         } else {
             // Altrimenti, ritorna tutte le conversazioni
             const conversationsRes = await client.query(
