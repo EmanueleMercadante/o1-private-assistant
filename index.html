@@ -17,15 +17,19 @@
                 <label for="model-select">Modello:</label>
                 <select id="model-select">
                     <option value="o1-2024-12-17">o1</option>
-                    <option value="o1-mini" selected>o1-mini</option>
+                    <option value="o1-mini">o1-mini</option>
                     <option value="o1-preview">o1-preview</option>
                     <option value="gpt-3.5-turbo">gpt-4o</option>
+                    <!-- Aggiungi altri modelli se necessario -->
                 </select>
                 <div class="formatting-toggle">
                     <input type="checkbox" id="disable-formatting" />
                     <label for="disable-formatting">Disattiva formattazione</label>
                 </div>
             </div>
+            <!-- Aggiungi questo blocco dove preferisci, ad esempio di fianco al selettore del modello -->
+            
+  
         </header>
         <div id="conversation-list">
             <h2>Conversazioni</h2>
@@ -37,20 +41,18 @@
         <div id="chat-section">
             <div id="chat-window"></div>
             <div class="input-area">
-                <!-- Nuovo input file per l'upload di immagini -->
-                <input type="file" id="image-input" multiple accept="image/*" style="margin-bottom: 5px;"/>
                 <textarea id="user-input" placeholder="Scrivi un messaggio..."></textarea>
                 <button id="send-button">Invia</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal per Anteprima Conversazione -->
+        <!-- Modal per Anteprima Conversazione -->
     <div id="preview-modal" class="modal">
         <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2>Anteprima Conversazione</h2>
-            <div id="preview-messages"></div>
+        <span class="close-button">&times;</span>
+        <h2>Anteprima Conversazione</h2>
+        <div id="preview-messages"></div>
         </div>
     </div>
 
@@ -59,7 +61,7 @@
     <!-- Includi i linguaggi che desideri supportare -->
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/javascript.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/python.min.js"></script>
-    <!-- <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/html.min.js"></script> -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/html.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/css.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/php.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/json.min.js"></script>
@@ -69,10 +71,9 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/sql.min.js"></script>
 
     
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.css"> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" integrity="sha512-jB0TkTBeQC9ZSkBqDhdmfTv1qdfbWpGE72yJ/01Srq6hEzZIz2xkz1e57p9ai7IeHMwEG7HpzG6NdptChif5Pg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
     <!-- Il tuo script principale -->
     <script type="module" src="script.js"></script>
-</body>
 </html>
