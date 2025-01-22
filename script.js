@@ -98,6 +98,22 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedModel = modelSelect.value;
     });
 
+
+
+
+
+    async function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('fileInputName', file);
+      
+        const response = await fetch('/api/uploadImage', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+        return data.url; // L’URL dell’immagine su Cloudinary
+      }
+
     /**
      * Carica la lista di conversazioni esistenti dal server
      * e popola il menu laterale.
@@ -205,6 +221,38 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => console.error('Errore nel caricamento della conversazione:', error));
     }
 
+    function displayTextMessage(role, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', role);
+    
+        const contentDiv = document.createElement('div');
+        contentDiv.classList.add('content');
+        // Se vuoi formattazione/disattivarla, decidi tu
+        contentDiv.textContent = text;
+    
+        messageDiv.appendChild(contentDiv);
+        chatWindow.appendChild(messageDiv);
+        messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      function displayImageMessage(role, imageUrl) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', role);
+    
+        const contentDiv = document.createElement('div');
+        contentDiv.classList.add('content');
+    
+        const imgElem = document.createElement('img');
+        imgElem.src = imageUrl;
+        imgElem.style.maxWidth = '200px';
+        imgElem.style.borderRadius = '8px';
+    
+        contentDiv.appendChild(imgElem);
+        messageDiv.appendChild(contentDiv);
+        chatWindow.appendChild(messageDiv);
+        messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
     /**
      * renderMessages()
      * Svuota il chatWindow e visualizza i messaggi in currentMessages
@@ -212,10 +260,25 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function renderMessages() {
         chatWindow.innerHTML = '';
-        currentMessages.forEach((msg, index) => {
-            displayMessage(msg.role, msg.content, false /* highlight = false */);
+        currentMessages.forEach(msg => {
+          // msg avrà shape: { role: 'user'|'assistant', content: string, content_json: [{...}]|null }
+          if (msg.content_json && Array.isArray(msg.content_json)) {
+            // Cicla i blocchi
+            msg.content_json.forEach(block => {
+              if (block.type === 'text') {
+                displayTextMessage(msg.role, block.text);
+              } else if (block.type === 'image_url') {
+                displayImageMessage(msg.role, block.image_url.url);
+              }
+            });
+          } else {
+            // Altrimenti, è un semplice testo
+            displayTextMessage(msg.role, msg.content);
+          }
         });
-    }
+      }
+
+
 
     /**
      * Visualizza un singolo messaggio nel chatWindow.
