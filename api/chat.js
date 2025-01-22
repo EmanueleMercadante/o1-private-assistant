@@ -65,7 +65,11 @@ module.exports = async (req, res) => {
       res.status(200).json({ conversation_id: conversationId, response: assistantMessage });
     } catch (error) {
       console.error('Errore nella chiamata all\'API di OpenAI (primo tentativo):', error);
-      // Secondo tentativo di retry
+      
+      // Attendo 1 secondo prima del secondo tentativo
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    
+      // Secondo tentativo
       try {
         const completionRetry = await openai.createChatCompletion({
           model: model || 'o1-mini',
