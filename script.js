@@ -535,8 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
               image_url: {
                 url: `data:image/jpeg;base64,${imgObj.base64}`, // => invio base64
                 detail: 'high'
-              },
-              cloud_url: imgObj.url // => URL Cloudinary
+              }
             });
           }
           pendingImages = [];
