@@ -98,6 +98,22 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedModel = modelSelect.value;
     });
 
+
+
+
+
+    async function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('fileInputName', file);
+      
+        const response = await fetch('/api/uploadImage', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+        return data.url; // L’URL dell’immagine su Cloudinary
+      }
+
     /**
      * Carica la lista di conversazioni esistenti dal server
      * e popola il menu laterale.
@@ -205,6 +221,38 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => console.error('Errore nel caricamento della conversazione:', error));
     }
 
+    function displayTextMessage(role, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', role);
+    
+        const contentDiv = document.createElement('div');
+        contentDiv.classList.add('content');
+        // Se vuoi formattazione/disattivarla, decidi tu
+        contentDiv.textContent = text;
+    
+        messageDiv.appendChild(contentDiv);
+        chatWindow.appendChild(messageDiv);
+        messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      function displayImageMessage(role, imageUrl) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', role);
+    
+        const contentDiv = document.createElement('div');
+        contentDiv.classList.add('content');
+    
+        const imgElem = document.createElement('img');
+        imgElem.src = imageUrl;
+        imgElem.style.maxWidth = '200px';
+        imgElem.style.borderRadius = '8px';
+    
+        contentDiv.appendChild(imgElem);
+        messageDiv.appendChild(contentDiv);
+        chatWindow.appendChild(messageDiv);
+        messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
     /**
      * renderMessages()
      * Svuota il chatWindow e visualizza i messaggi in currentMessages
@@ -212,10 +260,25 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function renderMessages() {
         chatWindow.innerHTML = '';
-        currentMessages.forEach((msg, index) => {
-            displayMessage(msg.role, msg.content, false /* highlight = false */);
+        currentMessages.forEach(msg => {
+          // msg avrà shape: { role: 'user'|'assistant', content: string, content_json: [{...}]|null }
+          if (msg.content_json && Array.isArray(msg.content_json)) {
+            // Cicla i blocchi
+            msg.content_json.forEach(block => {
+              if (block.type === 'text') {
+                displayTextMessage(msg.role, block.text);
+              } else if (block.type === 'image_url') {
+                displayImageMessage(msg.role, block.image_url.url);
+              }
+            });
+          } else {
+            // Altrimenti, è un semplice testo
+            displayTextMessage(msg.role, msg.content);
+          }
         });
-    }
+      }
+
+
 
     /**
      * Visualizza un singolo messaggio nel chatWindow.
@@ -431,74 +494,74 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inviare il messaggio
     sendButton.addEventListener('click', () => {
-    const userInputValue = userInput.value.trim();
-    // Se l'utente non scrive nulla e non ci sono immagini, non facciamo nulla
-    if (userInputValue === '' && pendingImages.length === 0) return;
-
-    // Prepara la variabile content in stile Python
-    let content;
-    if (pendingImages.length > 0) {
-        // Se ci sono delle immagini, includi anche il testo come blocco “text”
-        content = [];
-        if (userInputValue !== '') {
-            content.push({
-                type: 'text',
-                text: userInputValue
-            });
+        const userInputValue = userInput.value.trim();
+        // Se l'utente non scrive nulla e non ci sono immagini, non facciamo nulla
+        if (userInputValue === '' && pendingImages.length === 0) return;
+    
+        // Prepara la variabile content in stile Python
+        let content;
+        if (pendingImages.length > 0) {
+            // Se ci sono delle immagini, includi anche il testo come blocco “text”
+            content = [];
+            if (userInputValue !== '') {
+                content.push({
+                    type: 'text',
+                    text: userInputValue
+                });
+            }
+    
+            // Aggiunge ogni immagine come “image_url”
+            for (const base64Image of pendingImages) {
+                content.push({
+                    type: 'image_url',
+                    image_url: {
+                        url: `data:image/jpeg;base64,${base64Image}`,
+                        detail: 'high'
+                    }
+                });
+            }
+            // Svuota le immagini dopo averle inserite in content
+            pendingImages = [];
+        } else {
+            // Se non ci sono immagini, content è semplicemente la stringa testuale
+            content = userInputValue;
         }
-
-        // Aggiunge ogni immagine come “image_url”
-        for (const base64Image of pendingImages) {
-            content.push({
-                type: 'image_url',
-                image_url: {
-                    url: `data:image/jpeg;base64,${base64Image}`,
-                    detail: 'high'
-                }
-            });
-        }
-        // Svuota le immagini dopo averle inserite in content
-        pendingImages = [];
-    } else {
-        // Se non ci sono immagini, content è semplicemente la stringa testuale
-        content = userInputValue;
-    }
-
-    // Visualizza subito a schermo il messaggio dell’utente
-    // (testo) e/o anteprima immagini, se desideri
-    displayMessage('user', userInputValue);
-    userInput.value = '';
-
-    // Spinner di caricamento, se vuoi
-    showLoading();
-
-    // Invia un payload simile a:
-    // {
-    //   conversation_id: <...>,
-    //   message: <content (array o string)>,
-    //   model: <selectedModel>
-    // }
-    fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            conversation_id: currentConversationId,
-            message: content,
-            model: selectedModel
+    
+        // Visualizza subito a schermo il messaggio dell’utente
+        // (testo) e/o anteprima immagini, se desideri
+        displayMessage('user', userInputValue);
+        userInput.value = '';
+    
+        // Spinner di caricamento, se vuoi
+        showLoading();
+    
+        // Invia un payload simile a:
+        // {
+        //   conversation_id: <...>,
+        //   message: <content (array o string)>,
+        //   model: <selectedModel>
+        // }
+        fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                conversation_id: currentConversationId,
+                message: content,
+                model: selectedModel
+            })
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        currentConversationId = data.conversation_id;
-        hideLoading();
-        // Ricarica dal server la conversazione aggiornata...
-        loadConversation(currentConversationId);
-    })
-    .catch(error => {
-        console.error('Errore nella comunicazione con l\'API:', error);
-        hideLoading();
+        .then(response => response.json())
+        .then(data => {
+            currentConversationId = data.conversation_id;
+            hideLoading();
+            // Ricarica dal server la conversazione aggiornata...
+            loadConversation(currentConversationId);
+        })
+        .catch(error => {
+            console.error('Errore nella comunicazione con l\'API:', error);
+            hideLoading();
+        });
     });
-});
 
     // Nuova conversazione
     newConversationButton.addEventListener('click', () => {
