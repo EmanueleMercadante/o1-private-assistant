@@ -1,5 +1,5 @@
 const { Configuration, OpenAIApi } = require('openai');
-const pool = require('/api/db.js');
+const pool = require('./db.js');
 
 
 // Inizializza la configurazione di OpenAI
