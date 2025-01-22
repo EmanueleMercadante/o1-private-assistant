@@ -1,5 +1,6 @@
 const { Configuration, OpenAIApi } = require('openai');
-const { Client } = require('pg');
+const pool = require('../../lib/db.js');
+
 
 // Inizializza la configurazione di OpenAI
 const configuration = new Configuration({
@@ -8,13 +9,10 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration);
 
-// Configurazione del client PostgreSQL
-const client = new Client({
-  connectionString: process.env.DATABASE_URL || 'postgres://default:8nCx5XIZurDd@ep-soft-tooth-a45f5lao-pooler.us-east-1.aws.neon.tech:5432/verceldb?sslmode=require'
 
-});
 
-client.connect();
+
+
 
 module.exports = async (req, res) => {
   if (req.method === 'POST') {
@@ -24,7 +22,7 @@ module.exports = async (req, res) => {
     // Se conversationId non è fornito, crea una nuova conversazione
     if (!conversationId) {
       try {
-        const result = await client.query(
+        const result = await pool.query(
           'INSERT INTO conversations (conversation_name) VALUES ($1) RETURNING conversation_id',
           ['Nuova Conversazione'] // Puoi personalizzare il nome della conversazione
         );
@@ -79,7 +77,7 @@ module.exports = async (req, res) => {
 
 // Funzione per ottenere i messaggi di una conversazione (logica classica)
 async function getMessages(conversationId) {
-  const resDB = await client.query(
+  const resDB = await pool.query(
     'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
     [conversationId]
   );
@@ -107,7 +105,7 @@ async function saveMessage(conversationId, role, rawContent) {
     textContent = rawContent;
   }
 
-  await client.query(
+  await pool.query(
     `INSERT INTO messages (conversation_id, role, content, content_json)
      VALUES ($1, $2, $3, $4)`,
     [conversationId, role, textContent, contentJson]

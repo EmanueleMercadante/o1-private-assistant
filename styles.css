@@ -643,3 +643,155 @@ pre ::-webkit-scrollbar {
     outline: 2px solid #ff9800;
     background-color: #fff3e0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#upload-button,
+#send-button {
+    position: relative;
+    display: inline-block;
+    padding: 10px 20px;
+    /* Gradiente colorato: modifica i colori a piacimento */
+    background: linear-gradient(135deg, #fc9003, #fc6076); 
+    border: none;
+    border-radius: 20px;    
+    color: white;
+    font-size: 16px;  /* Puoi regolarlo a tuo gusto */
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-right: 8px; /* Precedentemente inline */
+}
+
+/* Hover: leggero sollevamento */
+#upload-button:hover,
+#send-button:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Active (cliccato): riporta giù e riduce l’ombra */
+#upload-button:active,
+#send-button:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* Eventuale focus */
+#upload-button:focus,
+#send-button:focus {
+    outline: none;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Lightbox Overlay */
+.image-lightbox {
+    display: none; /* di base nascosto */
+    position: fixed;
+    z-index: 9999; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%;
+    background-color: rgba(0,0,0,0.5); 
+  }
+  
+  .lightbox-content {
+    position: relative;
+    width: 80%;
+    max-width: 800px;
+    margin: 5% auto; 
+    background-color: #fefefe;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  
+  .lightbox-content img {
+    max-width: 100%;
+    border-radius: 8px;
+  }
+  
+  .lightbox-buttons {
+    margin-top: 15px;
+  }
+  
+  .lightbox-buttons button {
+    margin: 0 10px;
+    padding: 8px 16px;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+    font-weight: bold;
+  }
+  
+  .lightbox-buttons button:hover {
+    opacity: 0.9;
+  }
+  
+  #lightbox-close {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #333;
+  }
+  
+  #lightbox-close:hover {
+    color: #000;
+  }

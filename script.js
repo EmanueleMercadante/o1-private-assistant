@@ -6,6 +6,74 @@ document.addEventListener('DOMContentLoaded', () => {
     const conversationsList = document.getElementById('conversations');
     const newConversationButton = document.getElementById('new-conversation');
     const modelSelect = document.getElementById('model-select');
+    const imageLightbox = document.getElementById('image-lightbox');
+    const lightboxImage = document.getElementById('lightbox-image');
+    const lightboxClose = document.getElementById('lightbox-close');
+    const lightboxDownload = document.getElementById('lightbox-download');
+    const lightboxRemove = document.getElementById('lightbox-remove');
+
+    // Apri la lightbox, mostra l’immagine
+    function openLightbox(imageUrl) {
+      lightboxImage.src = imageUrl;
+      // Se vuoi cambiare “download” link
+      lightboxDownload.dataset.downloadUrl = imageUrl;
+
+      // Se l’immagine è in pending, potresti memorizzare l’indice
+      // o se non vuoi rimuoverla, potresti nascondere "Rimuovi" per
+      // le immagini già inviate.
+
+      imageLightbox.style.display = 'block';
+    }
+
+    // Chiude la lightbox
+    function closeLightbox() {
+      imageLightbox.style.display = 'none';
+      lightboxImage.src = '';
+      lightboxDownload.dataset.downloadUrl = '';
+    }
+
+    // Listener close
+    lightboxClose.addEventListener('click', closeLightbox);
+    // Facciamo in modo che cliccare fuori chiuda:
+    imageLightbox.addEventListener('click', (e) => {
+      if (e.target === imageLightbox) closeLightbox();
+    });
+
+    // Download
+    lightboxDownload.addEventListener('click', () => {
+      const url = lightboxDownload.dataset.downloadUrl;
+      // Creiamo un link “a” temporaneo, forzando l'attributo download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'immagine.jpg'; // Nome di default
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // Remove
+    lightboxRemove.addEventListener('click', () => {
+      // L’idea è: se l’immagine è “pending” (non inviata),
+      // la rimuoviamo da pendingImages. Dobbiamo sapere l’indice o la ref.
+
+      // Ad esempio, potresti confrontare lightboxImage.src con `data:image/jpeg;base64,${x.base64}` 
+      // e, se coincide, splice dal pendingImages. Poi chiudi la lightbox.
+
+      const urlToRemove = lightboxImage.src;
+
+      // Esempio di findIndex su pendingImages:
+      const index = pendingImages.findIndex(img => 
+        (`data:image/jpeg;base64,${img.base64}` === urlToRemove || img.url === urlToRemove)
+      );
+      if (index >= 0) {
+        pendingImages.splice(index, 1);
+        console.log('Immagine rimossa dai pendingImages');
+      } else {
+        console.log('Immagine non trovata in pendingImages (magari era già inviata)');
+      }
+      
+      closeLightbox();
+    });
 
     let pendingImages = []; // Array con i base64 delle immagini in attesa di invio
 
@@ -264,15 +332,20 @@ document.addEventListener('DOMContentLoaded', () => {
       function displayImageMessage(role, imageUrl) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', role);
-    
+      
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('content');
-    
+      
         const imgElem = document.createElement('img');
         imgElem.src = imageUrl;
         imgElem.style.maxWidth = '200px';
         imgElem.style.borderRadius = '8px';
-    
+      
+        // Aggiungiamo un event listener
+        imgElem.addEventListener('click', () => {
+          openLightbox(imageUrl);
+        });
+      
         contentDiv.appendChild(imgElem);
         messageDiv.appendChild(contentDiv);
         chatWindow.appendChild(messageDiv);
