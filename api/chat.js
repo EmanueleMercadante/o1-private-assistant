@@ -10,106 +10,110 @@ const openai = new OpenAIApi(configuration);
 // Configurazione del client PostgreSQL
 const client = new Client({
   connectionString: process.env.DATABASE_URL 
-    || 'postgres://default:xxx@host:5432/verceldb?sslmode=require'
+    || 'postgres://default:8nCx5XIZurDd@ep-soft-tooth-a45f5lao-pooler.us-east-1.aws.neon.tech:5432/verceldb?sslmode=require'
 });
+
 client.connect();
 
 module.exports = async (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Metodo non consentito' });
-  }
+  if (req.method === 'POST') {
+    const { conversation_id, message, model } = req.body;
+    let conversationId = conversation_id;
 
-  const { conversation_id, message, model } = req.body;
-  let conversationId = conversation_id;
+    // Se conversationId non è fornito, crea una nuova conversazione
+    if (!conversationId) {
+      try {
+        const result = await client.query(
+          'INSERT INTO conversations (conversation_name) VALUES ($1) RETURNING conversation_id',
+          ['Nuova Conversazione'] // Puoi personalizzare il nome della conversazione
+        );
+        conversationId = result.rows[0].conversation_id;
+      } catch (error) {
+        console.error('Errore nella creazione della nuova conversazione:', error);
+        res.status(500).json({ error: 'Errore interno del server' });
+        return;
+      }
+    }
 
-  // Se conversationId non è fornito, crea una nuova conversazione
-  if (!conversationId) {
+    // Recupera la cronologia esistente
+    let messages = [];
     try {
-      const result = await client.query(
-        'INSERT INTO conversations (conversation_name) VALUES ($1) RETURNING conversation_id',
-        ['Nuova Conversazione'] 
-      );
-      conversationId = result.rows[0].conversation_id;
+      messages = await getMessages(conversationId);
     } catch (error) {
-      console.error('Errore nella creazione della nuova conversazione:', error);
-      return res.status(500).json({ error: 'Errore interno del server' });
+      console.error('Errore nel recupero dei messaggi:', error);
+      res.status(500).json({ error: 'Errore interno del server' });
+      return;
     }
-  }
 
-  // Recupera la cronologia
-  let messages = [];
-  try {
-    messages = await getMessages(conversationId);
-  } catch (error) {
-    console.error('Errore nel recupero dei messaggi:', error);
-    return res.status(500).json({ error: 'Errore interno del server' });
-  }
+    // Aggiungi il messaggio dell'utente alla cronologia
+    messages.push({ role: 'user', content: message });
 
-  // Aggiungi il messaggio dell’utente alla cronologia
-  messages.push({ role: 'user', content: message });
-
-  // Inserisci subito il messaggio dell’utente nel DB
-  try {
-    await saveMessage(conversationId, 'user', message);
-  } catch (err) {
-    console.error('Errore salvataggio messaggio utente:', err);
-    return res.status(500).json({ error: 'Errore interno del server (saveMessage user)' });
-  }
-
-  // Tenta la prima volta la chiamata a OpenAI
-  let assistantMessage;
-  try {
-    assistantMessage = await doOpenAIRequest(model, messages);
-  } catch (err) {
-    console.error('Prima chiamata a OpenAI fallita, ritento...', err);
-    // Retry singolo
+    // Genera la risposta utilizzando l'API di OpenAI
     try {
-      assistantMessage = await doOpenAIRequest(model, messages);
-    } catch (err2) {
-      console.error('Seconda chiamata a OpenAI fallita:', err2);
-      return res.status(500).json({ error: 'Errore interno del server dopo 2 tentativi' });
+      // Primo tentativo
+      const completion = await openai.createChatCompletion({
+        model: model || 'o1-mini',
+        messages: messages,
+      });
+
+      const assistantMessage = completion.data.choices[0].message.content;
+
+      // Salva i messaggi nel database
+      await saveMessage(conversationId, 'user', message);
+      await saveMessage(conversationId, 'assistant', assistantMessage);
+
+      res.status(200).json({ conversation_id: conversationId, response: assistantMessage });
+    } catch (error) {
+      console.error('Errore nella chiamata all\'API di OpenAI (primo tentativo):', error);
+      // Secondo tentativo di retry
+      try {
+        const completionRetry = await openai.createChatCompletion({
+          model: model || 'o1-mini',
+          messages: messages,
+        });
+
+        const assistantMessageRetry = completionRetry.data.choices[0].message.content;
+
+        // Salva i messaggi nel database
+        await saveMessage(conversationId, 'user', message);
+        await saveMessage(conversationId, 'assistant', assistantMessageRetry);
+
+        res.status(200).json({ conversation_id: conversationId, response: assistantMessageRetry });
+      } catch (error2) {
+        console.error('Errore nella chiamata all\'API di OpenAI (secondo tentativo):', error2);
+        // Dopo due fallimenti, ritorna errore 500
+        res.status(500).json({ error: 'Errore interno del server dopo 2 tentativi' });
+      }
     }
+  } else {
+    res.status(405).json({ error: 'Metodo non consentito' });
   }
-
-  // Salva il messaggio dell’assistente nel DB
-  try {
-    await saveMessage(conversationId, 'assistant', assistantMessage);
-  } catch (error) {
-    console.error('Errore salvataggio messaggio assistant:', error);
-    return res.status(500).json({ error: 'Errore interno del server (saveMessage assistant)' });
-  }
-
-  // Tutto ok
-  return res.status(200).json({ conversation_id: conversationId, response: assistantMessage });
 };
 
-// Funzione di comodo per fare la request a OpenAI
-async function doOpenAIRequest(model, messages) {
-  const usedModel = model || 'o1-mini';
-  const completion = await openai.createChatCompletion({
-    model: usedModel,
-    messages: messages
-  });
-  return completion.data.choices[0].message.content;
-}
-
-// Ottiene i messaggi (cronologia) da DB
+// Funzione per ottenere i messaggi di una conversazione
 async function getMessages(conversationId) {
   const resDB = await client.query(
     'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
     [conversationId]
   );
-  return resDB.rows.map((row) => ({ role: row.role, content: row.content }));
+
+  // Mappa i messaggi nel formato richiesto dall'API di OpenAI
+  return resDB.rows.map((row) => ({
+    role: row.role,
+    content: row.content,
+  }));
 }
 
-// Salva un singolo messaggio nel DB
+// Funzione per salvare un messaggio nel database
+// Se “rawContent” è un array (es. blocchi con immagini), lo salvi in content_json;
+// altrimenti lo salvi come testo in content.
 async function saveMessage(conversationId, role, rawContent) {
   let textContent = null;
   let contentJson = null;
 
   if (Array.isArray(rawContent)) {
     contentJson = JSON.stringify(rawContent);
-    textContent = ''; 
+    textContent = ''; // per evitare errori not-null
   } else {
     textContent = rawContent;
   }
