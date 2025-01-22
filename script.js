@@ -21,20 +21,46 @@ document.addEventListener('DOMContentLoaded', () => {
     uploadInput.addEventListener('change', async (event) => {
         const files = event.target.files;
         if (!files || files.length === 0) return;
-
+      
         for (let file of files) {
-            try {
-                const base64Data = await convertFileToBase64(file);
-                pendingImages.push(base64Data);
-                // Visualizza un messaggio o anteprima “immagine caricata” se vuoi
-                displayTempImageMessage(base64Data);
-            } catch (err) {
-                console.error('Errore durante la conversione del file:', err);
-            }
+          try {
+            const base64Data = await convertFileToBase64(file);
+            
+            // Invio base64 allo /api/uploadImage per ottenere un URL Cloudinary:
+            const cloudUrl = await uploadBase64ToCloudinary(base64Data);
+            
+            // Così manteniamo un oggetto con base64 e url:
+            pendingImages.push({
+              base64: base64Data,
+              url: cloudUrl
+            });
+      
+            // Mostro subito l’immagine usando l’url reale (Cloudinary), 
+            // così non appendiamo un enorme base64 nell’ <img>
+            displayImageMessage('user', cloudUrl);
+      
+          } catch (err) {
+            console.error('Errore durante la generazione/upload base64:', err);
+          }
         }
-        // Resetta l’input per poter ri-selezionare la stessa immagine in futuro
         uploadInput.value = '';
-    });
+      });
+
+      async function uploadBase64ToCloudinary(base64String) {
+        // Inviamo con multiparty in un field “base64”
+        const formData = new FormData();
+        formData.append('base64', base64String);
+      
+        const response = await fetch('/api/uploadImage', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Errore nell\'upload');
+        }
+        return data.url; // L’URL di Cloudinary
+      }
 
 
     function convertFileToBase64(file) {
@@ -495,73 +521,62 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inviare il messaggio
     sendButton.addEventListener('click', () => {
         const userInputValue = userInput.value.trim();
-        // Se l'utente non scrive nulla e non ci sono immagini, non facciamo nulla
         if (userInputValue === '' && pendingImages.length === 0) return;
-    
-        // Prepara la variabile content in stile Python
+      
         let content;
         if (pendingImages.length > 0) {
-            // Se ci sono delle immagini, includi anche il testo come blocco “text”
-            content = [];
-            if (userInputValue !== '') {
-                content.push({
-                    type: 'text',
-                    text: userInputValue
-                });
-            }
-    
-            // Aggiunge ogni immagine come “image_url”
-            for (const base64Image of pendingImages) {
-                content.push({
-                    type: 'image_url',
-                    image_url: {
-                        url: `data:image/jpeg;base64,${base64Image}`,
-                        detail: 'high'
-                    }
-                });
-            }
-            // Svuota le immagini dopo averle inserite in content
-            pendingImages = [];
+          content = [];
+          if (userInputValue !== '') {
+            content.push({ type: 'text', text: userInputValue });
+          }
+      
+          // Ciascun elemento di pendingImages ha { base64, url }, 
+          // dove base64 è la stringa raw, url è Cloudinary
+          for (const imgObj of pendingImages) {
+            content.push({
+              type: 'image_url',
+              // Il “principale” rimane base64, come richiesto (“mantieni l’invio in base64”)
+              image_url: {
+                url: `data:image/jpeg;base64,${imgObj.base64}`,
+                detail: 'high'
+              },
+              // Se vuoi memorizzare anche l’URL reale (per uso server/later):
+              cloud_url: imgObj.url 
+            });
+          }
+          pendingImages = [];
         } else {
-            // Se non ci sono immagini, content è semplicemente la stringa testuale
-            content = userInputValue;
+          content = userInputValue;
         }
-    
-        // Visualizza subito a schermo il messaggio dell’utente
-        // (testo) e/o anteprima immagini, se desideri
-        displayMessage('user', userInputValue);
+      
+        // (Visualizzazione immediata del testo, se desideri)
+        if (userInputValue) {
+          displayTextMessage('user', userInputValue);
+        }
         userInput.value = '';
-    
-        // Spinner di caricamento, se vuoi
+      
         showLoading();
-    
-        // Invia un payload simile a:
-        // {
-        //   conversation_id: <...>,
-        //   message: <content (array o string)>,
-        //   model: <selectedModel>
-        // }
+      
         fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                conversation_id: currentConversationId,
-                message: content,
-                model: selectedModel
-            })
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            conversation_id: currentConversationId,
+            message: content,
+            model: selectedModel
+          })
         })
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
-            currentConversationId = data.conversation_id;
-            hideLoading();
-            // Ricarica dal server la conversazione aggiornata...
-            loadConversation(currentConversationId);
+          currentConversationId = data.conversation_id;
+          hideLoading();
+          loadConversation(currentConversationId);
         })
-        .catch(error => {
-            console.error('Errore nella comunicazione con l\'API:', error);
-            hideLoading();
+        .catch(err => {
+          console.error('Errore nella comunicazione con /api/chat:', err);
+          hideLoading();
         });
-    });
+      });
 
     // Nuova conversazione
     newConversationButton.addEventListener('click', () => {

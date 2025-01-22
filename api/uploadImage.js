@@ -1,10 +1,8 @@
-const cloudinary = require('../cloudinary'); // o dove hai messo la config
-const multiparty = require('multiparty');    // pacchetto per gestire form-data
-// npm install multiparty
+const cloudinary = require('../cloudinary');
+const multiparty = require('multiparty');
 
 module.exports = async (req, res) => {
   if (req.method === 'POST') {
-    // Utilizziamo multiparty per estrarre il file inviato
     const form = new multiparty.Form();
 
     form.parse(req, async (err, fields, files) => {
@@ -12,20 +10,26 @@ module.exports = async (req, res) => {
         return res.status(500).json({ error: 'Errore parse form-data' });
       }
 
-      // Sia che arrivino base64 o un file binario, gestiamo di conseguenza
-      // Esempio: se stai inviando un file binario, lo recuperi da files.myFile[0].path
-
       try {
-        // Se stai inviando un file binario, carichi il path:
-        const pathDelFile = files.fileInputName[0].path; 
+        /*
+         Se stai inviando il base64 come fields.base64 (stringa base64):
+           es: formData.append('base64', laTuaStringBase64);
+         
+         Altrimenti se stai ancora inviando un file binario,
+         gestisci files.fileInputName[0].path come prima.
+        */
+        const base64Data = fields.base64?.[0]; 
+        if (!base64Data) {
+          return res.status(400).json({ error: 'Manca il campo base64' });
+        }
 
-        // Upload su Cloudinary
-        const result = await cloudinary.uploader.upload(pathDelFile, {
-          folder: 'o1-private-imgs'  // cartella facoltativa
-        });
-
-        // result.url è l’URL pubblico dell’immagine
-        // Salva result.url nel DB oppure restituiscilo al front-end
+        // Carica su Cloudinary (puoi aggiungere "data:image/jpeg;base64," prima di base64Data)
+        const result = await cloudinary.uploader.upload(
+          `data:image/jpeg;base64,${base64Data}`,
+          { folder: 'o1-private-imgs' }
+        );
+        
+        // Restituisco l’URL ottenuto
         return res.status(200).json({ url: result.url });
 
       } catch (errUpload) {
