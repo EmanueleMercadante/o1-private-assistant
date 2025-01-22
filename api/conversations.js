@@ -13,11 +13,11 @@ module.exports = async (req, res) => {
         if (req.query.id) {
             const conversationId = req.query.id;
             const messagesRes = await client.query(
-                'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
-                [conversationId]
+              'SELECT role, content, content_json FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+              [conversationId]
             );
             res.status(200).json({ messages: messagesRes.rows });
-        } else {
+          } else {
             // Altrimenti, ritorna tutte le conversazioni
             const conversationsRes = await client.query(
                 'SELECT conversation_id, conversation_name FROM conversations ORDER BY created_at DESC'
