@@ -708,6 +708,13 @@ pre ::-webkit-scrollbar {
 
 
 
+#upload-button {
+    margin-left: 8px;
+}
+
+.hover:hover {
+    opacity: 0.5;
+}
 
 
 

@@ -318,6 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
         const imgElem = document.createElement('img');
         imgElem.src = imageUrl;
+        imgElem.classList.add('hover')
         imgElem.style.maxWidth = '200px';
         imgElem.style.borderRadius = '8px';
       
