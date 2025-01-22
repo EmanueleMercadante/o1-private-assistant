@@ -16,150 +16,100 @@ const client = new Client({
 
 client.connect();
 
-/**
- * Converte un array di “blocchi” (testo / immagini) in una stringa da passare a OpenAI.
- * Esempio: [ {type:"text", text:"ciao"}, {type:"image_url", ...} ] => "ciao [immagine]"
- */
-function blocksToText(blocks) {
-  return blocks.map(block => {
-    if (block.type === 'text') {
-      return block.text;
-    }
-    if (block.type === 'image_url') {
-      return '[immagine]';
-    }
-    return '';
-  }).join(' ');
-}
-
 module.exports = async (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Metodo non consentito' });
-  }
+  if (req.method === 'POST') {
+    const { conversation_id, message, model } = req.body;
+    let conversationId = conversation_id;
 
-  const { conversation_id, message, model } = req.body;
-  let conversationId = conversation_id;
-
-  // Se conversationId non è fornito, crea una nuova conversazione
-  if (!conversationId) {
-    try {
-      const result = await client.query(
-        'INSERT INTO conversations (conversation_name) VALUES ($1) RETURNING conversation_id',
-        ['Nuova Conversazione'] // Nome predefinito
-      );
-      conversationId = result.rows[0].conversation_id;
-    } catch (error) {
-      console.error('Errore nella creazione della nuova conversazione:', error);
-      return res.status(500).json({ error: 'Errore interno del server' });
+    // Se conversationId non è fornito, crea una nuova conversazione
+    if (!conversationId) {
+      try {
+        const result = await client.query(
+          'INSERT INTO conversations (conversation_name) VALUES ($1) RETURNING conversation_id',
+          ['Nuova Conversazione'] // Puoi personalizzare il nome della conversazione
+        );
+        conversationId = result.rows[0].conversation_id;
+      } catch (error) {
+        console.error('Errore nella creazione della nuova conversazione:', error);
+        res.status(500).json({ error: 'Errore interno del server' });
+        return;
+      }
     }
-  }
 
-  // Recupera la cronologia dei messaggi per la conversazione corrente
-  let messages = [];
-  try {
-    messages = await getMessages(conversationId);
-  } catch (error) {
-    console.error('Errore nel recupero dei messaggi:', error);
-    return res.status(500).json({ error: 'Errore interno del server' });
-  }
-
-  // --------------------------------------------
-  // Prepara il messaggio utente per OpenAI
-  // --------------------------------------------
-  let userTextForOpenAI = '';
-  if (Array.isArray(message)) {
-    // Se “message” è un array di blocchi => convertili in stringa
-    userTextForOpenAI = blocksToText(message);
-  } else {
-    // Altrimenti è una stringa
-    userTextForOpenAI = message || '';
-  }
-
-  // Aggiungi il messaggio dell'utente alla cronologia (in formato OpenAI)
-  messages.push({ role: 'user', content: userTextForOpenAI });
-
-  // Salva il messaggio dell’utente nel DB (testo o JSON)
-  try {
-    await saveMessage(conversationId, 'user', message);
-  } catch (error) {
-    console.error('Errore nell\'inserimento del messaggio utente:', error);
-    return res.status(500).json({ error: 'Errore interno del server durante l\'inserimento' });
-  }
-
-  // -------------------------------------------------------
-  // Chiamata a OpenAI
-  // -------------------------------------------------------
-  try {
-    const completion = await openai.createChatCompletion({
-      model: model || 'o1-mini',  // Modello di default
-      messages: messages,
-    });
-
-    const assistantMessage = completion.data.choices[0].message.content;
-
-    // Salva la risposta dell’assistente
+    // Recupera la cronologia esistente
+    let messages = [];
     try {
+      messages = await getMessages(conversationId);
+    } catch (error) {
+      console.error('Errore nel recupero dei messaggi:', error);
+      res.status(500).json({ error: 'Errore interno del server' });
+      return;
+    }
+
+    // Aggiungi il messaggio dell'utente alla cronologia (logica originale)
+    // Se “message” è un array, conterrà i base64 come stringa + testo,
+    // verrà inviato a OpenAI “così com’è”.
+    messages.push({ role: 'user', content: message });
+
+    // Genera la risposta utilizzando l'API di OpenAI (logica originale)
+    try {
+      const completion = await openai.createChatCompletion({
+          model: model || 'o1-mini', // Usa il modello ricevuto o un predefinito
+          messages: messages,
+      });
+
+      const assistantMessage = completion.data.choices[0].message.content;
+
+      // Salva i messaggi nel database
+      await saveMessage(conversationId, 'user', message);
       await saveMessage(conversationId, 'assistant', assistantMessage);
-    } catch (error) {
-      console.error('Errore nell\'inserimento del messaggio assistant:', error);
-      return res.status(500).json({ error: 'Errore nel salvataggio della risposta assistant' });
-    }
 
-    // Rispondi con conversation_id e la risposta
-    return res.status(200).json({ conversation_id: conversationId, response: assistantMessage });
-  } catch (error) {
-    console.error(
-      'Errore nella chiamata all\'API di OpenAI:',
-      error.response ? error.response.data : error.message
-    );
-    return res.status(500).json({ error: 'Errore interno del server' });
+      res.status(200).json({ conversation_id: conversationId, response: assistantMessage });
+    } catch (error) {
+      console.error(
+        'Errore nella chiamata all\'API di OpenAI:',
+        error.response ? error.response.data : error.message
+      );
+      res.status(500).json({ error: 'Errore interno del server' });
+    }
+  } else {
+    res.status(405).json({ error: 'Metodo non consentito' });
   }
 };
 
-// ─────────────────────────────────────────────────────
-// Funzione per ottenere i messaggi di una conversazione
-// Restituisce un array di { role, content } per OpenAI
-// ─────────────────────────────────────────────────────
+// Funzione per ottenere i messaggi di una conversazione (logica classica)
 async function getMessages(conversationId) {
   const resDB = await client.query(
-    'SELECT role, content, content_json FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+    'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
     [conversationId]
   );
 
-  // Converti i record in { role, content } come richiesto da OpenAI
-  // Se content_json non è null, trasformalo in stringa con blocksToText
-  return resDB.rows.map(row => {
-    if (row.content_json) {
-      try {
-        const blocks = JSON.parse(row.content_json);
-        const text = blocksToText(blocks);
-        return { role: row.role, content: text };
-      } catch {
-        // In caso di JSON malformato, fallback a content
-        return { role: row.role, content: row.content };
-      }
-    }
-    return { role: row.role, content: row.content };
-  });
+  // Mappa i messaggi nel formato richiesto dall'API di OpenAI
+  return resDB.rows.map((row) => ({
+    role: row.role,
+    content: row.content,
+  }));
 }
 
-// ─────────────────────────────────────────────────────
-// Funzione per salvare il messaggio (string vs array)
-// ─────────────────────────────────────────────────────
-async function saveMessage(conversationId, role, rawMessage) {
-  // Se rawMessage è array => lo salviamo in JSON
-  // Altrimenti come stringa in “content”
-  let textContent = '';
-  let contentJsonString = null;
+// Funzione per salvare un messaggio nel database
+// Se “rawContent” è un array (es: blocchi con immagini), lo salvi in content_json;
+// altrimenti lo salvi come testo in content. (Esempio di ibrido)
+async function saveMessage(conversationId, role, rawContent) {
+  let textContent = null;
+  let contentJson = null;
 
-  if (Array.isArray(rawMessage)) {
-    contentJsonString = JSON.stringify(rawMessage);
+  if (Array.isArray(rawContent)) {
+    // Se arriva un array (es. blocchi con base64, etc.), salvi nel campo content_json
+    contentJson = JSON.stringify(rawContent);
+    textContent = ''; // per evitare errori not-null
   } else {
-    textContent = rawMessage || '';
+    // È testo semplice
+    textContent = rawContent;
   }
 
   await client.query(
-    'INSERT INTO messages (conversation_id, role, content, content_json) VALUES ($1, $2, $3, $4)',
-    [conversationId, role, textContent, contentJsonString]
+    `INSERT INTO messages (conversation_id, role, content, content_json)
+     VALUES ($1, $2, $3, $4)`,
+    [conversationId, role, textContent, contentJson]
   );
 }
