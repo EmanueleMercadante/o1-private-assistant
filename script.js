@@ -442,6 +442,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // pendingImages.forEach(base64Image => displayTempImageMessage(base64Image));
     
         userInput.value = '';
+
+
+        console.log(message);
     
         // Prepara il payload da inviare al server
         const payload = {
