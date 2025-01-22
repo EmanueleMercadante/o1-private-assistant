@@ -10,14 +10,15 @@ const openai = new OpenAIApi(configuration);
 
 // Configurazione del client PostgreSQL
 const client = new Client({
-  connectionString: process.env.DATABASE_URL || 'postgres://default:8nCx5XIZurDd@ep-soft-tooth-a45f5lao-pooler.us-east-1.aws.neon.tech:5432/verceldb?sslmode=require'
+  connectionString: process.env.DATABASE_URL 
+                    || 'postgres://default:xxx@ep-soft-tooth-a45f5lao-pooler.us-east-1.aws.neon.tech:5432/verceldb?sslmode=require'
 });
 
 client.connect();
 
 /**
- * Helper per convertire array di blocchi (testo / immagini) in una stringa
- * per la chiamata a OpenAI.
+ * Converte un array di “blocchi” (testo / immagini) in una stringa da passare a OpenAI.
+ * Esempio: [ {type:"text", text:"ciao"}, {type:"image_url", ...} ] => "ciao [immagine]"
  */
 function blocksToText(blocks) {
   return blocks.map(block => {
@@ -44,7 +45,7 @@ module.exports = async (req, res) => {
     try {
       const result = await client.query(
         'INSERT INTO conversations (conversation_name) VALUES ($1) RETURNING conversation_id',
-        ['Nuova Conversazione']
+        ['Nuova Conversazione'] // Nome predefinito
       );
       conversationId = result.rows[0].conversation_id;
     } catch (error) {
@@ -56,26 +57,28 @@ module.exports = async (req, res) => {
   // Recupera la cronologia dei messaggi per la conversazione corrente
   let messages = [];
   try {
-    messages = await getMessagesForOpenAI(conversationId);
+    messages = await getMessages(conversationId);
   } catch (error) {
     console.error('Errore nel recupero dei messaggi:', error);
     return res.status(500).json({ error: 'Errore interno del server' });
   }
 
-  // Prepara il testo da inviare a OpenAI
-  // Se message è un array di blocchi, converti in stringa
+  // --------------------------------------------
+  // Prepara il messaggio utente per OpenAI
+  // --------------------------------------------
   let userTextForOpenAI = '';
   if (Array.isArray(message)) {
+    // Se “message” è un array di blocchi => convertili in stringa
     userTextForOpenAI = blocksToText(message);
   } else {
-    // Altrimenti, è una stringa
+    // Altrimenti è una stringa
     userTextForOpenAI = message || '';
   }
 
-  // Aggiungi il messaggio dell'utente all'array che andrà a OpenAI
+  // Aggiungi il messaggio dell'utente alla cronologia (in formato OpenAI)
   messages.push({ role: 'user', content: userTextForOpenAI });
 
-  // Salva il messaggio dell'utente nel DB (testo + JSON se presente)
+  // Salva il messaggio dell’utente nel DB (testo o JSON)
   try {
     await saveMessage(conversationId, 'user', message);
   } catch (error) {
@@ -83,17 +86,18 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'Errore interno del server durante l\'inserimento' });
   }
 
-  // Genera la risposta utilizzando l'API di OpenAI
-  const usedModel = model || 'o1-mini';
+  // -------------------------------------------------------
+  // Chiamata a OpenAI
+  // -------------------------------------------------------
   try {
     const completion = await openai.createChatCompletion({
-      model: usedModel,
+      model: model || 'o1-mini',  // Modello di default
       messages: messages,
     });
 
     const assistantMessage = completion.data.choices[0].message.content;
 
-    // Salva il messaggio dell'assistente nel DB
+    // Salva la risposta dell’assistente
     try {
       await saveMessage(conversationId, 'assistant', assistantMessage);
     } catch (error) {
@@ -101,7 +105,7 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Errore nel salvataggio della risposta assistant' });
     }
 
-    // Rispondi al front-end con l'ID della conversazione e la risposta
+    // Rispondi con conversation_id e la risposta
     return res.status(200).json({ conversation_id: conversationId, response: assistantMessage });
   } catch (error) {
     console.error(
@@ -112,52 +116,50 @@ module.exports = async (req, res) => {
   }
 };
 
-/**
- * Recupera i messaggi da DB e li trasforma nel formato {role, content} 
- * che serve a OpenAI. Se hai introdotto la colonna content_json,
- * la useremo per generare testo quando presente.
- */
-async function getMessagesForOpenAI(conversationId) {
-  const queryResult = await client.query(
-    `SELECT role, content, content_json
-       FROM messages
-      WHERE conversation_id = $1
-      ORDER BY created_at ASC`,
+// ─────────────────────────────────────────────────────
+// Funzione per ottenere i messaggi di una conversazione
+// Restituisce un array di { role, content } per OpenAI
+// ─────────────────────────────────────────────────────
+async function getMessages(conversationId) {
+  const resDB = await client.query(
+    'SELECT role, content, content_json FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
     [conversationId]
   );
 
-  // Converte ciascun record in { role, content: '...' } per OpenAI
-  return queryResult.rows.map(row => {
+  // Converti i record in { role, content } come richiesto da OpenAI
+  // Se content_json non è null, trasformalo in stringa con blocksToText
+  return resDB.rows.map(row => {
     if (row.content_json) {
-      // Se c'è un JSON di blocchi, lo parsiamo e uniamo in testo
-      const blocks = JSON.parse(row.content_json);
-      const text = blocksToText(blocks);
-      return { role: row.role, content: text };
+      try {
+        const blocks = JSON.parse(row.content_json);
+        const text = blocksToText(blocks);
+        return { role: row.role, content: text };
+      } catch {
+        // In caso di JSON malformato, fallback a content
+        return { role: row.role, content: row.content };
+      }
     }
-    // Altrimenti, usiamo content
-    return { role: row.role, content: row.content || '' };
+    return { role: row.role, content: row.content };
   });
 }
 
-/**
- * Salva un messaggio nel DB, gestendo la distinzione tra stringa e array di blocchi.
- * Se message è un array => content_json, se string => content, in modo da
- * non violare i vincoli NOT NULL e avere la struttura JSON disponibile.
- */
+// ─────────────────────────────────────────────────────
+// Funzione per salvare il messaggio (string vs array)
+// ─────────────────────────────────────────────────────
 async function saveMessage(conversationId, role, rawMessage) {
-  // Evitiamo errori di not-null su content
+  // Se rawMessage è array => lo salviamo in JSON
+  // Altrimenti come stringa in “content”
   let textContent = '';
   let contentJsonString = null;
 
   if (Array.isArray(rawMessage)) {
-    contentJsonString = JSON.stringify(rawMessage); // Salviamo l'array in JSON
+    contentJsonString = JSON.stringify(rawMessage);
   } else {
-    textContent = rawMessage || ''; // Se è stringa, la mettiamo in content
+    textContent = rawMessage || '';
   }
 
   await client.query(
-    `INSERT INTO messages (conversation_id, role, content, content_json)
-     VALUES ($1, $2, $3, $4)`,
+    'INSERT INTO messages (conversation_id, role, content, content_json) VALUES ($1, $2, $3, $4)',
     [conversationId, role, textContent, contentJsonString]
   );
 }

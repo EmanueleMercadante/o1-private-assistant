@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
 
-    function convertFileToBase64(file) {
+      function convertFileToBase64(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
