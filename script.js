@@ -293,12 +293,13 @@ document.addEventListener('DOMContentLoaded', () => {
             msg.content_json.forEach(block => {
               if (block.type === 'text') {
                 displayTextMessage(msg.role, block.text);
-                if (block.type === 'image_url') {
-                    // Preferisci la chiave block.cloud_url se esiste, 
-                    // altrimenti fallback su block.image_url.url:
-                    const finalLink = block.cloud_url || block.image_url.url;
-                    displayImageMessage(msg.role, finalLink);
-                  }
+              } else if (block.type === 'image_url') {
+                // Preferisci la chiave block.cloud_url se esiste, 
+                // altrimenti fallback su block.image_url.url:
+                const finalLink = block.cloud_url || block.image_url.url;
+                displayImageMessage(msg.role, finalLink);
+              }
+            });
           } else {
             // Altrimenti, è un semplice testo
             displayTextMessage(msg.role, msg.content);
