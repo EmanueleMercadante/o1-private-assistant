@@ -143,26 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-
-    function displayTempImageMessage(base64Image) {
-        // Visualizza un “box messaggio” con l’anteprima dell’immagine
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', 'user');  // o 'assistant' se preferisci
-        const contentDiv = document.createElement('div');
-        contentDiv.classList.add('content');
-    
-        // Crea un <img> con la base64
-        const imageElem = document.createElement('img');
-        imageElem.src = `data:image/jpeg;base64,${base64Image}`;
-        imageElem.style.maxWidth = '200px';
-        imageElem.style.borderRadius = '8px';
-    
-        contentDiv.appendChild(imageElem);
-        messageDiv.appendChild(contentDiv);
-        chatWindow.appendChild(messageDiv);
-    
-        messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
     // --- Gestione stato della formattazione ---
     // Di default la formattazione è ATTIVA (checkbox non spuntato).
     let disableFormatting = false;
