@@ -1,4 +1,4 @@
-const cloudinary = require('../cloudinary');
+const cloudinary = require('cloudinary');
 const multiparty = require('multiparty');
 
 module.exports = async (req, res) => {
