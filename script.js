@@ -431,46 +431,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inviare il messaggio
     sendButton.addEventListener('click', () => {
-        const message = userInput.value.trim();
-        if (message === '' && pendingImages.length === 0) return;
+        const userInputValue = userInput.value.trim();
+        // Se l'utente non scrive nulla e non ci sono immagini, non facciamo nulla
+        if (userInputValue === '' && pendingImages.length === 0) return;
     
-        // Mostra subito il messaggio testo dell’utente
-        if (message !== '') {
-            displayMessage('user', message);
+        // Prepara la variabile content in stile Python
+        let content;
+        if (pendingImages.length > 0) {
+            // Se ci sono delle immagini, includi anche il testo come blocco “text”
+            content = [];
+            if (userInputValue !== '') {
+                content.push({
+                    type: 'text',
+                    text: userInputValue
+                });
+            }
+    
+            // Aggiunge ogni immagine come “image_url”
+            for (const base64Image of pendingImages) {
+                content.push({
+                    type: 'image_url',
+                    image_url: {
+                        url: `data:image/jpeg;base64,${base64Image}`,
+                        detail: 'high'
+                    }
+                });
+            }
+            // Svuota le immagini dopo averle inserite in content
+            pendingImages = [];
+        } else {
+            // Se non ci sono immagini, content è semplicemente la stringa testuale
+            content = userInputValue;
         }
-        // Poi mostra eventuali immagini che erano in attesa (se non le avevi già mostrate)
-        // pendingImages.forEach(base64Image => displayTempImageMessage(base64Image));
     
+        // Visualizza subito a schermo il messaggio dell’utente
+        // (testo) e/o anteprima immagini, se desideri
+        displayMessage('user', userInputValue);
         userInput.value = '';
-
-
-        console.log(message);
     
-        // Prepara il payload da inviare al server
-        const payload = {
-            conversation_id: currentConversationId,
-            message: message,
-            model: selectedModel,
-            // Invia la lista di immagini come array di stringhe base64 (senza data:image)
-            images: pendingImages
-        };
+        // Spinner di caricamento, se vuoi
+        showLoading();
     
-        showLoading(); // eventuale spinner
-    
+        // Invia un payload simile a:
+        // {
+        //   conversation_id: <...>,
+        //   message: <content (array o string)>,
+        //   model: <selectedModel>
+        // }
         fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                conversation_id: currentConversationId,
+                message: content,
+                model: selectedModel
+            })
         })
         .then(response => response.json())
         .then(data => {
             currentConversationId = data.conversation_id;
             hideLoading();
-    
-            // Una volta inviato, svuota l’array delle immagini
-            pendingImages = [];
-    
-            // Ricarica la conversazione o aggiorna localmente
+            // Ricarica dal server la conversazione aggiornata...
             loadConversation(currentConversationId);
         })
         .catch(error => {
