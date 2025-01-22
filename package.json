@@ -10,6 +10,7 @@
     "author": "Il tuo nome",
     "license": "MIT",
     "dependencies": {
+        "cloudinary": "*",
         "dompurify": "^2.4.0",
         "highlight.js": "^11.7.0",
         "o1-private-assistant": "file:",
