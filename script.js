@@ -7,6 +7,68 @@ document.addEventListener('DOMContentLoaded', () => {
     const newConversationButton = document.getElementById('new-conversation');
     const modelSelect = document.getElementById('model-select');
 
+    let pendingImages = []; // Array con i base64 delle immagini in attesa di invio
+
+    const uploadButton = document.getElementById('upload-button');
+    const uploadInput   = document.getElementById('upload-input');
+
+    // Quando clicco su “Allega Immagine” apro il file-selector
+    uploadButton.addEventListener('click', () => {
+        uploadInput.click();
+    });
+
+    // Leggo i file selezionati e li converto in base64
+    uploadInput.addEventListener('change', async (event) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        for (let file of files) {
+            try {
+                const base64Data = await convertFileToBase64(file);
+                pendingImages.push(base64Data);
+                // Visualizza un messaggio o anteprima “immagine caricata” se vuoi
+                displayTempImageMessage(base64Data);
+            } catch (err) {
+                console.error('Errore durante la conversione del file:', err);
+            }
+        }
+        // Resetta l’input per poter ri-selezionare la stessa immagine in futuro
+        uploadInput.value = '';
+    });
+
+
+    function convertFileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                resolve(reader.result.replace(/^data:image\/[a-zA-Z]+;base64,/, ''));
+            };
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+
+
+    function displayTempImageMessage(base64Image) {
+        // Visualizza un “box messaggio” con l’anteprima dell’immagine
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', 'user');  // o 'assistant' se preferisci
+        const contentDiv = document.createElement('div');
+        contentDiv.classList.add('content');
+    
+        // Crea un <img> con la base64
+        const imageElem = document.createElement('img');
+        imageElem.src = `data:image/jpeg;base64,${base64Image}`;
+        imageElem.style.maxWidth = '200px';
+        imageElem.style.borderRadius = '8px';
+    
+        contentDiv.appendChild(imageElem);
+        messageDiv.appendChild(contentDiv);
+        chatWindow.appendChild(messageDiv);
+    
+        messageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
     // --- Gestione stato della formattazione ---
     // Di default la formattazione è ATTIVA (checkbox non spuntato).
     let disableFormatting = false;
@@ -370,35 +432,43 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inviare il messaggio
     sendButton.addEventListener('click', () => {
         const message = userInput.value.trim();
-        if (message === '') return;
-        // Visualizza subito il messaggio dell'utente
-        displayMessage('user', message);
+        if (message === '' && pendingImages.length === 0) return;
+    
+        // Mostra subito il messaggio testo dell’utente
+        if (message !== '') {
+            displayMessage('user', message);
+        }
+        // Poi mostra eventuali immagini che erano in attesa (se non le avevi già mostrate)
+        // pendingImages.forEach(base64Image => displayTempImageMessage(base64Image));
+    
         userInput.value = '';
-
-        showLoading();
-
+    
+        // Prepara il payload da inviare al server
+        const payload = {
+            conversation_id: currentConversationId,
+            message: message,
+            model: selectedModel,
+            // Invia la lista di immagini come array di stringhe base64 (senza data:image)
+            images: pendingImages
+        };
+    
+        showLoading(); // eventuale spinner
+    
         fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                conversation_id: currentConversationId,
-                message: message,
-                model: selectedModel
-            })
+            body: JSON.stringify(payload)
         })
         .then(response => response.json())
         .then(data => {
             currentConversationId = data.conversation_id;
             hideLoading();
-            // Aggiunge i due messaggi in currentMessages
-            // (user e assistant) – in realtà user già c'è, ma rifacciamo un loadConversation
-            // per restare in sync col DB.
+    
+            // Una volta inviato, svuota l’array delle immagini
+            pendingImages = [];
+    
+            // Ricarica la conversazione o aggiorna localmente
             loadConversation(currentConversationId);
-
-            // Oppure, per aggiungerlo manualmente e poi renderMessages():
-            // currentMessages.push({ role: 'user', content: message });
-            // currentMessages.push({ role: 'assistant', content: data.response });
-            // renderMessages();
         })
         .catch(error => {
             console.error('Errore nella comunicazione con l\'API:', error);

@@ -42,6 +42,17 @@
             <div id="chat-window"></div>
             <div class="input-area">
                 <textarea id="user-input" placeholder="Scrivi un messaggio..."></textarea>
+                <!-- Pulsante per allegare immagini -->
+                <input 
+                id="upload-input" 
+                type="file" 
+                accept="image/*" 
+                multiple 
+                style="display: none;" 
+                />
+                <button id="upload-button" style="margin-right:8px;">Allega Immagine</button>
+
+                <!-- Pulsante di invio -->
                 <button id="send-button">Invia</button>
             </div>
         </div>
