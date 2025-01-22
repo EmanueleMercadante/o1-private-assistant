@@ -24,19 +24,19 @@ document.addEventListener('DOMContentLoaded', () => {
       
         for (let file of files) {
           try {
+            // Converte il file locale in base64
             const base64Data = await convertFileToBase64(file);
-            
-            // Invio base64 allo /api/uploadImage per ottenere un URL Cloudinary:
+      
+            // Upload del base64 a /api/uploadImage => ottengo un URL Cloudinary
             const cloudUrl = await uploadBase64ToCloudinary(base64Data);
-            
-            // Così manteniamo un oggetto con base64 e url:
+      
+            // Nel pendingImages salvo entrambi
             pendingImages.push({
               base64: base64Data,
               url: cloudUrl
             });
       
-            // Mostro subito l’immagine usando l’url reale (Cloudinary), 
-            // così non appendiamo un enorme base64 nell’ <img>
+            // Visualizzo subito un'anteprima in chat con l'URL Cloudinary
             displayImageMessage('user', cloudUrl);
       
           } catch (err) {
@@ -45,9 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         uploadInput.value = '';
       });
+      
 
       async function uploadBase64ToCloudinary(base64String) {
-        // Inviamo con multiparty in un field “base64”
         const formData = new FormData();
         formData.append('base64', base64String);
       
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!response.ok) {
           throw new Error(data.error || 'Errore nell\'upload');
         }
-        return data.url; // L’URL di Cloudinary
+        return data.url; // L'URL di Cloudinary
       }
 
 
@@ -526,22 +526,17 @@ document.addEventListener('DOMContentLoaded', () => {
         let content;
         if (pendingImages.length > 0) {
           content = [];
-          if (userInputValue !== '') {
+          if (userInputValue) {
             content.push({ type: 'text', text: userInputValue });
           }
-      
-          // Ciascun elemento di pendingImages ha { base64, url }, 
-          // dove base64 è la stringa raw, url è Cloudinary
           for (const imgObj of pendingImages) {
             content.push({
               type: 'image_url',
-              // Il “principale” rimane base64, come richiesto (“mantieni l’invio in base64”)
               image_url: {
-                url: `data:image/jpeg;base64,${imgObj.base64}`,
+                url: `data:image/jpeg;base64,${imgObj.base64}`, // => invio base64
                 detail: 'high'
               },
-              // Se vuoi memorizzare anche l’URL reale (per uso server/later):
-              cloud_url: imgObj.url 
+              cloud_url: imgObj.url // => URL Cloudinary
             });
           }
           pendingImages = [];
@@ -549,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
           content = userInputValue;
         }
       
-        // (Visualizzazione immediata del testo, se desideri)
+        // Visualizza internamente il testo subito (se vuoi)
         if (userInputValue) {
           displayTextMessage('user', userInputValue);
         }
@@ -573,10 +568,31 @@ document.addEventListener('DOMContentLoaded', () => {
           loadConversation(currentConversationId);
         })
         .catch(err => {
-          console.error('Errore nella comunicazione con /api/chat:', err);
+          console.error('Errore /api/chat:', err);
           hideLoading();
         });
       });
+      
+      // 4) Nella renderMessages (o dove crei i <img>):
+      //   Sostituisci block.image_url.url con block.cloud_url se presente...
+      function renderMessages() {
+        chatWindow.innerHTML = '';
+        currentMessages.forEach(msg => {
+          if (msg.content_json && Array.isArray(msg.content_json)) {
+            msg.content_json.forEach(block => {
+              if (block.type === 'text') {
+                displayTextMessage(msg.role, block.text);
+              } else if (block.type === 'image_url') {
+                // Se c'è block.cloud_url, usalo, altrimenti fallback al base64
+                const finalUrl = block.cloud_url || block.image_url.url;
+                displayImageMessage(msg.role, finalUrl);
+              }
+            });
+          } else {
+            displayTextMessage(msg.role, msg.content);
+          }
+        });
+      }
 
     // Nuova conversazione
     newConversationButton.addEventListener('click', () => {
