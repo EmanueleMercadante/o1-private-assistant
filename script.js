@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMessages = [];
 
     // Modello selezionato
-    let selectedModel = 'o1-mini'; 
+    let selectedModel = 'o3-mini'; 
     if (modelSelect) {
       selectedModel = modelSelect.value;
       

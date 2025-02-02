@@ -53,7 +53,7 @@ module.exports = async (req, res) => {
       // Primo tentativo
       const completion = await openai.createChatCompletion({
         reasoning_effort: "high",
-        model: model || 'o1-mini',
+        model: model || 'o3-mini',
         messages: messages,
       });
 
@@ -74,7 +74,7 @@ module.exports = async (req, res) => {
       try {
         const completionRetry = await openai.createChatCompletion({
           reasoning_effort: "high",
-          model: model || 'o1-mini',
+          model: model || 'o3-mini',
           messages: messages,
         });
 
